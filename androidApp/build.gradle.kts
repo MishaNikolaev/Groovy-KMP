@@ -43,4 +43,9 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.androidx.activity.compose)
     debugImplementation(libs.compose.ui.tooling)
+    // Koin Android
+    implementation("io.insert-koin:koin-android:3.5.3")
+    // Ktor OkHttp engine
+    implementation("io.ktor:ktor-client-okhttp:2.3.7")
+
 }

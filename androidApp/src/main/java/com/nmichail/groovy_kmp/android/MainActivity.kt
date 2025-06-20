@@ -1,5 +1,6 @@
 package com.nmichail.groovy_kmp.android
 
+import LoginViewModel
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.nmichail.groovy_kmp.Greeting
+import com.nmichail.groovy_kmp.presentation.App
+import org.koin.android.ext.android.getKoin
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,22 +22,10 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    GreetingView(Greeting().greet())
+                    val viewModel = getKoin().get<LoginViewModel>()
+                    App(viewModel)
                 }
             }
         }
-    }
-}
-
-@Composable
-fun GreetingView(text: String) {
-    Text(text = text)
-}
-
-@Preview
-@Composable
-fun DefaultPreview() {
-    MyApplicationTheme {
-        GreetingView("Hello, Android!")
     }
 }
