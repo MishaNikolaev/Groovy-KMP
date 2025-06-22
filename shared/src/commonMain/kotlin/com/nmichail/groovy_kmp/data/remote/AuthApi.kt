@@ -16,19 +16,12 @@ class AuthApi(private val client: HttpClient) {
     suspend fun login(email: String, password: String): AuthResponse {
         return withContext(Dispatchers.IO) {
             try {
+                val request = AuthRequest(email = email, password = password, username = email)
+                //Here my mac ip, you can change it to yours.
+                val response: HttpResponse = client.post("http://122.128.0.6:8080/auth/login") {
 
-                val request = AuthRequest(email, password, email)
-
-                val json = Json {
-                    prettyPrint = true
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                }
-                val jsonString = json.encodeToString(AuthRequest.serializer(), request)
-
-                val response: HttpResponse = client.post("http://127.0.0.1:8080/auth/login") {
-                    contentType(ContentType.Application.Json)
-                    setBody(jsonString)
+                contentType(ContentType.Application.Json)
+                    setBody(request)
                 }
 
                 val responseBody = response.body<AuthResponse>()

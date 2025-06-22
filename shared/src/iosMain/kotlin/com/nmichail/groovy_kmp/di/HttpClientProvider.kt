@@ -3,7 +3,9 @@ package com.nmichail.groovy_kmp.di
 import io.ktor.client.*
 import io.ktor.client.engine.darwin.Darwin
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.*
+import io.ktor.client.request.header
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
