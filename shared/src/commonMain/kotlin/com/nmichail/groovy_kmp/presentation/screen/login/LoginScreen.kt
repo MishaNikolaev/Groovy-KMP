@@ -174,7 +174,7 @@ fun LoginScreen(
                 if (errorMessage != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = errorMessage,
+                        text = "Неверный логин или пароль",
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
@@ -280,7 +280,7 @@ fun LoginScreen(
                             }
                     }
                 )
-                Spacer(modifier = Modifier.height(72.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
         }
     }

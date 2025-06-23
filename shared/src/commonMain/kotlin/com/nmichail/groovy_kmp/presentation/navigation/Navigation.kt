@@ -61,7 +61,9 @@ fun Navigation() {
                         }
                     }
                 },
-                onCreateAccount = { navigator.navigate(Screen.Register.route) }
+                onCreateAccount = { navigator.navigate(Screen.Register.route) },
+                isLoading = loginViewModel.isLoading,
+                errorMessage = loginViewModel.errorMessage
             )
         }
 
