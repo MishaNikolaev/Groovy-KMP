@@ -3,8 +3,10 @@ package com.nmichail.groovy_kmp.presentation.screen.login
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -26,6 +28,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import groovy_kmp.shared.generated.resources.Res
+import groovy_kmp.shared.generated.resources.apple
+import groovy_kmp.shared.generated.resources.google
 import groovy_kmp.shared.generated.resources.login_image
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
@@ -86,7 +90,8 @@ fun LoginScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(32.dp),
+                        .padding(32.dp)
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.Start
                 ) {
                     Text(
@@ -180,7 +185,84 @@ fun LoginScreen(
                         )
                     }
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Divider(
+                            modifier = Modifier.weight(1f),
+                            color = Color.LightGray
+                        )
+                        Text(
+                            text = "OR",
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                            color = Color.Gray
+                        )
+                        Divider(
+                            modifier = Modifier.weight(1f),
+                            color = Color.LightGray
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(24.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            println("Google Sign In clicked (TODO: implement)")
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color.Black
+                        )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                painter = painterResource(Res.drawable.google),
+                                contentDescription = "Google",
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Continue with Google", fontSize = 16.sp)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            println("Apple Sign In clicked (TODO: implement)")
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color.Black
+                        )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                painter = painterResource(Res.drawable.apple),
+                                contentDescription = "Apple",
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Continue with Apple", fontSize = 16.sp)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
 
                     val annotatedText = buildAnnotatedString {
                         append("Don't have an account? ")
