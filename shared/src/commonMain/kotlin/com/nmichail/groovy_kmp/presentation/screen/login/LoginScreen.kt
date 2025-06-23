@@ -86,7 +86,7 @@ fun LoginScreen(
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .padding(32.dp),
                 horizontalAlignment = Alignment.Start
             ) {
@@ -280,6 +280,7 @@ fun LoginScreen(
                             }
                     }
                 )
+                Spacer(modifier = Modifier.height(72.dp))
             }
         }
     }

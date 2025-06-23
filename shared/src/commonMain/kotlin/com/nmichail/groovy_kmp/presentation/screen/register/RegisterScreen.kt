@@ -53,22 +53,30 @@ fun RegisterScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
-            .verticalScroll(scrollState),
+            .background(Color.White),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(40.dp))
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(32.dp),
+                    .fillMaxSize()
+                    .padding(32.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.Start
             ) {
+                Spacer(modifier = Modifier.height(34.dp))
                 Text(
                     text = "Create account",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(14.dp))
                 Text(
                     text = "Sign up to get started",
                     style = MaterialTheme.typography.bodyLarge.copy(color = Color.DarkGray)
@@ -275,5 +283,6 @@ fun RegisterScreen(
             }
         }
     }
+}
 
 
