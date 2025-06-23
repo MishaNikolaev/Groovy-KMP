@@ -2,6 +2,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.nmichail.groovy_kmp.domain.usecases.LoginUseCase
+import com.nmichail.groovy_kmp.domain.models.AuthResponse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -11,17 +12,16 @@ class LoginViewModel(
 ) {
     var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
+    private var lastAuthResponse: AuthResponse? = null
 
     fun login(email: String, password: String, onResult: (Boolean) -> Unit) {
-
         isLoading = true
         errorMessage = null
         println("Login attempt with email: $email")
         CoroutineScope(Dispatchers.Main).launch {
             try {
-
                 val response = loginUseCase(email, password)
-
+                lastAuthResponse = response
                 if (response.token != null) {
                     println("Login successful. Token: ${response.token}")
                     onResult(true)
@@ -40,4 +40,7 @@ class LoginViewModel(
             }
         }
     }
+
+    fun getUser() = lastAuthResponse?.user
+    fun getToken() = lastAuthResponse?.token
 }

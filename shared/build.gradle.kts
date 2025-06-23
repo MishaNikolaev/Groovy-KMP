@@ -4,8 +4,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     id("org.jetbrains.compose") version "1.6.10"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.23"
 }
 
 kotlin {
@@ -70,6 +69,8 @@ kotlin {
         }
         androidMain.dependencies {
             implementation("io.ktor:ktor-client-okhttp:2.3.7")
+            implementation("androidx.room:room-runtime:2.6.1")
+            implementation("androidx.room:room-ktx:2.6.1")
         }
         iosMain.dependencies {
             implementation("io.ktor:ktor-client-darwin:2.3.7")

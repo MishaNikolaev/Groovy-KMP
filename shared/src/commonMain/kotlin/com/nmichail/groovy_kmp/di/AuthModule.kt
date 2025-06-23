@@ -24,3 +24,5 @@ val appModule = module {
     single<RegisterRepository> { RegisterRepositoryImpl(get()) }
     single { RegisterUseCase(get()) }
 }
+
+val allModules = listOf(appModule, sessionModuleCommon)
