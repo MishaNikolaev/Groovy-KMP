@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.nmichail.groovy_kmp.Greeting
 import com.nmichail.groovy_kmp.presentation.App
+import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
 import org.koin.android.ext.android.getKoin
 
 class MainActivity : ComponentActivity() {
@@ -22,8 +23,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val viewModel = getKoin().get<LoginViewModel>()
-                    App(viewModel)
+                    App()
                 }
             }
         }

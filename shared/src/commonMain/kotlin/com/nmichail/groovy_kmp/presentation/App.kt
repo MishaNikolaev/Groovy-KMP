@@ -12,19 +12,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.nmichail.groovy_kmp.presentation.screen.login.LoginScreen
+import com.nmichail.groovy_kmp.presentation.screen.register.RegisterScreen
+import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
+import org.koin.mp.KoinPlatform.getKoin
 
 @Composable
-fun App(viewModel: LoginViewModel) {
-    var loginResult by remember { mutableStateOf<String?>(null) }
+fun App() {
+    var registerResult by remember { mutableStateOf<String?>(null) }
+    val viewModel = getKoin().get<RegisterViewModel>()
 
-    if (loginResult == null) {
-        LoginScreen(
-            onSignIn = { email, password ->
-                viewModel.login(email, password) { isSuccess ->
-                    loginResult = if (isSuccess) "success" else "fail"
+    if (registerResult == null) {
+        RegisterScreen(
+            onRegister = { email, password, username ->
+                viewModel.register(email, password, username) { isSuccess ->
+                    registerResult = if (isSuccess) "success" else "fail"
                 }
             },
-            onCreateAccount = {},
+            onLogin = {},
             isLoading = viewModel.isLoading,
             errorMessage = viewModel.errorMessage
         )
@@ -33,7 +37,7 @@ fun App(viewModel: LoginViewModel) {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text(loginResult ?: "")
+            Text(registerResult ?: "")
         }
     }
 }

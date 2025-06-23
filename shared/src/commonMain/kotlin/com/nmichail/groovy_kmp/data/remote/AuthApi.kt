@@ -33,4 +33,21 @@ class AuthApi(private val client: HttpClient) {
             }
         }
     }
+
+    suspend fun register(email: String, password: String, username: String): AuthResponse {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = com.nmichail.groovy_kmp.domain.models.RegisterRequest(email = email, password = password, username = username)
+                //Here my mac ip, you can change it to yours.
+                val response: HttpResponse = client.post("http://192.168.0.6:8080/auth/register") {
+                    contentType(ContentType.Application.Json)
+                    setBody(request)
+                }
+                response.body()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                throw e
+            }
+        }
+    }
 } 

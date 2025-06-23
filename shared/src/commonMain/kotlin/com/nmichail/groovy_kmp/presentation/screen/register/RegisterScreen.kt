@@ -1,4 +1,4 @@
-package com.nmichail.groovy_kmp.presentation.screen.login
+package com.nmichail.groovy_kmp.presentation.screen.register
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,17 +33,19 @@ import groovy_kmp.shared.generated.resources.google
 import groovy_kmp.shared.generated.resources.login_image
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import org.koin.mp.KoinPlatform.getKoin
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
-fun LoginScreen(
-    onSignIn: (String, String) -> Unit,
-    onCreateAccount: () -> Unit,
+fun RegisterScreen(
+    onRegister: (String, String, String) -> Unit,
+    onLogin: () -> Unit,
     isLoading: Boolean = false,
     errorMessage: String? = null
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
+    var username by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
@@ -55,36 +57,7 @@ fun LoginScreen(
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(220.dp)
-        ) {
-            Image(
-                painter = painterResource(Res.drawable.login_image),
-                contentDescription = "Concert background",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.White),
-                            startY = 200f
-                        )
-                    )
-            )
-        }
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-        ) {
+        Spacer(modifier = Modifier.height(40.dp))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -92,15 +65,33 @@ fun LoginScreen(
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(
-                    text = "Welcome back",
+                    text = "Create account",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Sign In to your account",
+                    text = "Sign up to get started",
                     style = MaterialTheme.typography.bodyLarge.copy(color = Color.DarkGray)
                 )
                 Spacer(modifier = Modifier.height(32.dp))
+
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        disabledContainerColor = Color.White,
+                        focusedIndicatorColor = Color.Black,
+                        focusedLabelColor = Color.Black,
+                        cursorColor = Color.Black,
+                    ),
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
                     value = email,
@@ -151,7 +142,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
-                    onClick = { onSignIn(email, password) },
+                    onClick = { onRegister(email, password, username) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -168,7 +159,7 @@ fun LoginScreen(
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Sign in", color = Color.White, fontSize = 18.sp)
+                        Text("Sign up", color = Color.White, fontSize = 18.sp)
                     }
                 }
 
@@ -207,7 +198,7 @@ fun LoginScreen(
 
                 OutlinedButton(
                     onClick = {
-                        println("Google Sign In clicked (TODO: implement)")
+                        println("Google Sign Up clicked (TODO: implement)")
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -235,7 +226,7 @@ fun LoginScreen(
 
                 OutlinedButton(
                     onClick = {
-                        println("Apple Sign In clicked (TODO: implement)")
+                        println("Apple Sign Up clicked (TODO: implement)")
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -262,10 +253,10 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 val annotatedText = buildAnnotatedString {
-                    append("Don't have an account? ")
-                    pushStringAnnotation(tag = "SignUp", annotation = "SignUp")
+                    append("Already have an account? ")
+                    pushStringAnnotation(tag = "SignIn", annotation = "SignIn")
                     withStyle(style = SpanStyle(color = Color.Black, fontWeight = FontWeight.Bold)) {
-                        append("Sign up")
+                        append("Sign in")
                     }
                     pop()
                 }
@@ -275,13 +266,14 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
                     onClick = { offset ->
-                        annotatedText.getStringAnnotations(tag = "SignUp", start = offset, end = offset)
+                        annotatedText.getStringAnnotations(tag = "SignIn", start = offset, end = offset)
                             .firstOrNull()?.let {
-                                onCreateAccount()
+                                onLogin()
                             }
                     }
                 )
             }
         }
     }
-}
+
+
