@@ -44,12 +44,12 @@ kotlin {
                 implementation("org.jetbrains.compose.components:components-resources:1.6.10")
 
                 // Koin core
-                implementation("io.insert-koin:koin-core:3.5.3")
+                implementation(libs.koin.core)
 
                 // Ktor
-                implementation("io.ktor:ktor-client-core:2.3.7")
-                implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.serialization.kotlinx.json)
                 implementation("io.ktor:ktor-client-logging:2.3.7")
                 // kotlinx.serialization
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
@@ -57,7 +57,15 @@ kotlin {
                 implementation("app.cash.sqldelight:runtime:2.0.1")
                 implementation("app.cash.sqldelight:coroutines-extensions:2.0.1")
                 // Coroutines
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+                implementation(libs.kotlinx.coroutines.core)
+
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.materialIconsExtended)
+                @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+                implementation(compose.components.resources)
+                implementation("moe.tlaster:precompose:1.5.10")
             }
         }
         androidMain.dependencies {
