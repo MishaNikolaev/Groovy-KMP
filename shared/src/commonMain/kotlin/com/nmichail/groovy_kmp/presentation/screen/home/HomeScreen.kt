@@ -22,14 +22,9 @@ import groovy_kmp.shared.generated.resources.music_notes_simple
 import groovy_kmp.shared.generated.resources.queen_example
 import groovy_kmp.shared.generated.resources.wham_example
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.resources.DrawableResource
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Settings
-import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.ArtistCircle
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.PlayArrow
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumUi
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumsSection
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.ArtistsSection
@@ -38,8 +33,20 @@ import androidx.compose.foundation.verticalScroll
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Playlists.PlaylistUi
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Playlists.PlaylistsSection
 import groovy_kmp.shared.generated.resources.playlist_example
-import androidx.compose.ui.text.style.TextOverflow
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Playlists_Liked_Heard.PlaylistsLikedHeard
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalDensity
+import com.nmichail.groovy_kmp.presentation.screen.home.components.neuromusic.GenreCard
+import com.nmichail.groovy_kmp.presentation.screen.home.components.neuromusic.GenresCarousel
+import kotlinx.coroutines.flow.collect
 
 @Composable
 fun HomeScreen() {
@@ -129,7 +136,19 @@ fun HomeScreen() {
             onViewAllClick = { /* TODO */ }
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(36.dp))
+        Text(
+            text = "This is — Neuromusic",
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+        Text(
+            text = "Distracts from noise and helps you focus on what matters",
+            style = MaterialTheme.typography.titleMedium.copy(color = Color.Gray),
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+        GenresCarousel()
+        Spacer(modifier = Modifier.height(32.dp))
 
     }
 }
