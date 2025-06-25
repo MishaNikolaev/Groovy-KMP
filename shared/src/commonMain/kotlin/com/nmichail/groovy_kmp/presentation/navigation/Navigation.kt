@@ -1,5 +1,6 @@
 package com.nmichail.groovy_kmp.presentation.navigation
 
+import HomeScreen
 import LoginViewModel
 import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.Box
@@ -8,7 +9,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.nmichail.groovy_kmp.presentation.screen.login.LoginScreen
 import com.nmichail.groovy_kmp.presentation.screen.register.RegisterScreen
-import com.nmichail.groovy_kmp.presentation.screen.home.HomeScreen
 import com.nmichail.groovy_kmp.presentation.screen.search.SearchScreen
 import com.nmichail.groovy_kmp.presentation.screen.favourite.FavouriteScreen
 import com.nmichail.groovy_kmp.presentation.screen.profile.ProfileScreen
