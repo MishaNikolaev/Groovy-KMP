@@ -57,6 +57,7 @@ fun HomeScreen() {
             .padding(horizontal = 20.dp)
             .verticalScroll(rememberScrollState())
     ) {
+        Spacer(modifier = Modifier.height(34.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -100,10 +101,10 @@ fun HomeScreen() {
             }
         }
 
-        Spacer(modifier = Modifier.height(44.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         PlaylistsLikedHeard()
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(14.dp))
         AlbumsSection(
             albums = listOf(
                 AlbumUi("The Miracle", "Queen", Res.drawable.Queen_The_Miracle_example),
@@ -148,7 +149,7 @@ fun HomeScreen() {
             modifier = Modifier.padding(bottom = 24.dp)
         )
         GenresCarousel()
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
     }
 }
