@@ -1,5 +1,6 @@
 package com.nmichail.groovy_kmp.presentation.navigation
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Home
@@ -7,14 +8,20 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.HomeMax
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.HomeMax
+import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun BottomBar(
@@ -32,7 +39,8 @@ fun BottomBar(
                 icon = {
                     Icon(
                         imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                        contentDescription = item.screen.route
+                        contentDescription = item.screen.route,
+                        modifier = if (item.screen == Screen.MainSection.Home) Modifier.size(32.dp) else Modifier
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
@@ -54,8 +62,8 @@ private data class BottomNavItem(
 private val bottomNavItems = listOf(
     BottomNavItem(
         screen = Screen.MainSection.Home,
-        selectedIcon = Icons.Filled.Home,
-        unselectedIcon = Icons.Outlined.Home
+        selectedIcon = Icons.Filled.MusicNote,
+        unselectedIcon = Icons.Outlined.MusicNote
     ),
     BottomNavItem(
         screen = Screen.MainSection.Search,
