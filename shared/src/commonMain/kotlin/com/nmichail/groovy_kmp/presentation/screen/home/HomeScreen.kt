@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalDensity
 import com.nmichail.groovy_kmp.presentation.screen.home.components.neuromusic.GenreCard
 import com.nmichail.groovy_kmp.presentation.screen.home.components.neuromusic.GenresCarousel
+import groovy_kmp.shared.generated.resources.logo_groovy_vou
 import kotlinx.coroutines.flow.collect
 
 @Composable
@@ -66,11 +67,10 @@ fun HomeScreen() {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
             ) {
-                Icon(
-                    painter = painterResource(Res.drawable.groovy_logo),
-                    contentDescription = "Logo",
-                    tint = Color.Black,
-                    modifier = Modifier.size(28.dp)
+                Image(
+                    painter = painterResource(Res.drawable.logo_groovy_vou),
+                    contentDescription = "Heart",
+                    modifier = Modifier.size(40.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(

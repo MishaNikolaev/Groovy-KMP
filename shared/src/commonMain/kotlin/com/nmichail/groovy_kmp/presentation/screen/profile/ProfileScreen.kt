@@ -86,7 +86,8 @@ fun ProfileScreen(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp),
+                    .padding(start = 16.dp, end = 16.dp)
+                    .clickable { /* TODO: обработка клика по My likes */ },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
