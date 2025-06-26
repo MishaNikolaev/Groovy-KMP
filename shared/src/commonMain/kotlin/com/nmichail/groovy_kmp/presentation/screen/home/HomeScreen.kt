@@ -89,16 +89,6 @@ fun HomeScreen() {
                     modifier = Modifier.size(26.dp)
                 )
             }
-
-
-            IconButton(onClick = { /* TODO */ }) {
-                Icon(
-                    imageVector = Icons.Filled.Settings,
-                    contentDescription = "Notifications",
-                    tint = Color.Black,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
         }
 
         Spacer(modifier = Modifier.height(14.dp))

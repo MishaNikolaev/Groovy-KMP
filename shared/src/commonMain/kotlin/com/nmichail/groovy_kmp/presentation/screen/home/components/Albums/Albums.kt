@@ -115,21 +115,6 @@ fun AlbumCard(album: AlbumUi, onClick: () -> Unit) {
                 contentDescription = album.title,
                 modifier = Modifier.matchParentSize()
             )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.85f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.PlayArrow,
-                    contentDescription = "Play",
-                    tint = Color.DarkGray,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
         }
         Spacer(modifier = Modifier.height(10.dp))
         Text(
