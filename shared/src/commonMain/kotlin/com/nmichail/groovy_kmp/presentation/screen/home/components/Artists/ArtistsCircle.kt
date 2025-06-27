@@ -30,62 +30,6 @@ import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
-
-@Composable
-fun ArtistsSection(
-    artists: List<Pair<String, DrawableResource>>,
-    onArtistClick: (String) -> Unit,
-    onViewAllClick: () -> Unit
-) {
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Artists for you",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
-                ),
-                modifier = Modifier.weight(1f)
-            )
-            Row(
-                modifier = Modifier
-                    .clickable { onViewAllClick() }
-                    .padding(start = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "View All",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.DarkGray,
-                        fontWeight = FontWeight.Medium
-                    )
-                )
-                Icon(
-                    imageVector = Icons.Filled.ArrowDropDown,
-                    contentDescription = "Expand",
-                    tint = Color.DarkGray
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(4.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(28.dp)
-        ) {
-            artists.forEach { (name, imageRes) ->
-                ArtistCircle(name, imageRes) { onArtistClick(name) }
-            }
-        }
-    }
-}
-
 @Composable
 fun ArtistCircle(name: String, imageRes: DrawableResource, onClick: () -> Unit) {
     Column(

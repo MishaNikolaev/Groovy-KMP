@@ -38,8 +38,21 @@ import org.jetbrains.compose.resources.DrawableResource
 import androidx.compose.foundation.shape.RoundedCornerShape
 import groovy_kmp.shared.generated.resources.like_profile
 import groovy_kmp.shared.generated.resources.logo_groovy_vou
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Playlists.PlaylistCard
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumCard
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumUi
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Playlists.PlaylistUi
+import androidx.compose.foundation.verticalScroll
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.ArtistsSection
+import groovy_kmp.shared.generated.resources.wham_example
 
-@OptIn(ExperimentalResourceApi::class)
+@OptIn(ExperimentalResourceApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun FavouriteScreen() {
     val onHeaderClick = { /* TODO: обработка клика по заголовку */ }
@@ -49,15 +62,17 @@ fun FavouriteScreen() {
         TrackUi("We Are The Champions", "Queen", Res.drawable.Queen_The_Miracle_example),
         TrackUi("Another One Bites The Dust", "Queen", Res.drawable.queen_example),
         TrackUi("Somebody to Love", "Queen", Res.drawable.queen_example),
-        TrackUi("Song 6", "Artist 6", Res.drawable.avatar)
+        TrackUi("This is a very long track title to demonstrate the marquee effect", "A-HA", Res.drawable.avatar)
     )
     val chunkedTracks = tracks.chunked(3)
+    val pagerState = rememberPagerState(pageCount = { chunkedTracks.size })
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
             .padding(horizontal = 20.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         Spacer(modifier = Modifier.height(34.dp))
         Row(
@@ -92,7 +107,7 @@ fun FavouriteScreen() {
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "164 tracks",
+                    text = "${tracks.size} tracks",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color.Gray,
                         fontSize = 16.sp
@@ -101,23 +116,154 @@ fun FavouriteScreen() {
             }
         }
         Spacer(modifier = Modifier.height(24.dp))
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 0.dp, end = 16.dp)
-        ) {
-            items(chunkedTracks) { columnTracks ->
+
+        if (chunkedTracks.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "You have no favourite tracks",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.Gray
+                )
+            }
+        } else {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(start = 0.dp, end = 40.dp),
+                pageSpacing = 16.dp
+            ) { page ->
                 Column(
-                    modifier = Modifier.width(320.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    columnTracks.forEach { track ->
+                    chunkedTracks[page].forEach { track ->
                         TrackCard(track)
                     }
                 }
-                Spacer(modifier = Modifier.width(16.dp))
             }
         }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+        }
+
+        Spacer(modifier = Modifier.height(36.dp))
+        Text(
+            text = "Also in your collection",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { /* TODO: обработка клика по плейлисту */ }
+            ) {
+                Box(
+                    modifier = Modifier.size(width = 80.dp, height = 76.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(68.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFE5BDBD))
+                            .align(Alignment.TopEnd)
+                    )
+                    Image(
+                        painter = painterResource(Res.drawable.avatar),
+                        contentDescription = "Плейлист",
+                        modifier = Modifier
+                            .size(68.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .align(Alignment.BottomStart)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                ) {
+                    Text(
+                        text = "Плейлисты",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium, fontSize = 18.sp),
+                        maxLines = 1,
+                        modifier = Modifier.basicMarquee(),
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "В автобус, В зал, Работа",
+                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray, fontSize = 15.sp),
+                        maxLines = 2
+                    )
+                }
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { /* TODO: обработка клика по альбому */ }
+            ) {
+                Box(
+                    modifier = Modifier.size(width = 80.dp, height = 76.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(68.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFD3D3D3))
+                            .align(Alignment.TopEnd)
+                    )
+                    Image(
+                        painter = painterResource(Res.drawable.Queen_The_Miracle_example),
+                        contentDescription = "Альбом",
+                        modifier = Modifier
+                            .size(68.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .align(Alignment.BottomStart)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                ) {
+                    Text(
+                        text = "Альбомы",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium, fontSize = 18.sp),
+                        maxLines = 1,
+                        modifier = Modifier.basicMarquee(),
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "The Miracle",
+                        style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray, fontSize = 15.sp),
+                        maxLines = 2
+                    )
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(36.dp))
+        ArtistsSection(
+            title = "Most listened to artists",
+            artists = listOf(
+                Pair("Queen", Res.drawable.queen_example),
+                Pair("Wham", Res.drawable.wham_example),
+                Pair("Queen", Res.drawable.queen_example)
+            ),
+            onArtistClick = { /* TODO */ },
+            onViewAllClick = { /* TODO */ }
+        )
+        Spacer(modifier = Modifier.height(48.dp))
     }
 }
-

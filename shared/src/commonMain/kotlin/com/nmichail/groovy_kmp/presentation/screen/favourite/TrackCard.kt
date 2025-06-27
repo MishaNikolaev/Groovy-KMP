@@ -1,7 +1,9 @@
 package com.nmichail.groovy_kmp.presentation.screen.favourite
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,7 +31,7 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
 
-@OptIn(ExperimentalResourceApi::class)
+@OptIn(ExperimentalResourceApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun TrackCard(track: TrackUi) {
     Row(
@@ -55,7 +57,7 @@ fun TrackCard(track: TrackUi) {
                 text = track.title,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                modifier = Modifier.basicMarquee()
             )
             Text(
                 text = track.artist,
