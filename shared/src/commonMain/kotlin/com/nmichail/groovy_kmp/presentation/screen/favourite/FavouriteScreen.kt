@@ -264,6 +264,6 @@ fun FavouriteScreen() {
             onArtistClick = { /* TODO */ },
             onViewAllClick = { /* TODO */ }
         )
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(18.dp))
     }
 }
