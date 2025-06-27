@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
-import coil.compose.AsyncImage
 
 @Composable
 expect fun PlatformImage(url: String?, contentDescription: String?)
