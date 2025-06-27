@@ -106,7 +106,7 @@ fun HomeScreen() {
         )
         Spacer(modifier = Modifier.height(24.dp))
         ArtistsSection(
-            title = "Most listened to artists",
+            title = "Top artists",
             artists = listOf(
                 Pair("Queen", Res.drawable.queen_example),
                 Pair("Wham", Res.drawable.wham_example),
