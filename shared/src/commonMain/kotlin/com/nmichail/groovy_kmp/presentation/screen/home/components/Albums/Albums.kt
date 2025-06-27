@@ -33,7 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
+import coil.compose.AsyncImage
 
+@Composable
+expect fun PlatformImage(url: String?, contentDescription: String?)
 
 @Composable
 fun AlbumsSection(
@@ -81,6 +84,7 @@ fun AlbumsSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .height(220.dp)
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(20.dp)
         ) {
@@ -94,11 +98,13 @@ fun AlbumsSection(
 data class AlbumUi(
     val title: String,
     val artist: String,
-    val cover: DrawableResource
+    val coverUrl: String?,
+    val id: String? = null
 )
 
 @Composable
 fun AlbumCard(album: AlbumUi, onClick: () -> Unit) {
+    println("AlbumCard: title=${album.title}, artist=${album.artist}, coverUrl=${album.coverUrl}")
     Column(
         modifier = Modifier
             .width(140.dp)
@@ -109,12 +115,9 @@ fun AlbumCard(album: AlbumUi, onClick: () -> Unit) {
             modifier = Modifier
                 .size(140.dp)
                 .clip(RoundedCornerShape(12.dp))
+                .background(Color.LightGray)
         ) {
-            Image(
-                painter = painterResource(album.cover),
-                contentDescription = album.title,
-                modifier = Modifier.matchParentSize()
-            )
+            PlatformImage(album.coverUrl, album.title)
         }
         Spacer(modifier = Modifier.height(10.dp))
         Text(

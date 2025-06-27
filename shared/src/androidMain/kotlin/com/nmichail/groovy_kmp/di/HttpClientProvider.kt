@@ -6,8 +6,10 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.header
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
+import com.nmichail.groovy_kmp.getServerHost
 
 actual fun provideHttpClient(): HttpClient = HttpClient(OkHttp) {
     install(ContentNegotiation) {
@@ -24,6 +26,11 @@ actual fun provideHttpClient(): HttpClient = HttpClient(OkHttp) {
     }
     
     defaultRequest {
+        url {
+            protocol = URLProtocol.HTTP
+            host = getServerHost()
+            port = 8080
+        }
         header("Content-Type", "application/json")
         header("Accept", "application/json")
     }

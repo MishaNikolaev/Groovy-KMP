@@ -13,9 +13,11 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "SERVER_HOST", "\"10.0.2.2\"")
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.12"
@@ -28,6 +30,7 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            buildConfigField("String", "SERVER_HOST", "\"192.168.0.10\"")
         }
     }
     compileOptions {
@@ -45,8 +48,6 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.room.common.jvm)
-    implementation(libs.androidx.room.runtime.android)
     debugImplementation(libs.compose.ui.tooling)
     // Koin Android
     implementation("io.insert-koin:koin-android:3.5.3")

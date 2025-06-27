@@ -1,7 +1,7 @@
 package com.nmichail.groovy_kmp.android
 
 import android.app.Application
-import com.nmichail.groovy_kmp.di.appModule
+import com.nmichail.groovy_kmp.di.allModules
 import com.nmichail.groovy_kmp.android.di.sessionModuleAndroid
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -11,7 +11,7 @@ class MyApplication : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@MyApplication)
-            modules(appModule, sessionModuleAndroid)
+            modules(allModules + sessionModuleAndroid)
         }
     }
 }

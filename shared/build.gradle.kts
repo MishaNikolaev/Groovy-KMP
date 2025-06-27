@@ -65,19 +65,44 @@ kotlin {
                 @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
                 implementation(compose.components.resources)
                 implementation("moe.tlaster:precompose:1.5.10")
+
             }
         }
-        androidMain.dependencies {
-            implementation("io.ktor:ktor-client-okhttp:2.3.7")
-            implementation("androidx.room:room-runtime:2.6.1")
-            implementation("androidx.room:room-ktx:2.6.1")
+        val commonTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
         }
-        iosMain.dependencies {
-            implementation("io.ktor:ktor-client-darwin:2.3.7")
+        val androidMain by getting {
+            dependencies {
+                implementation("io.coil-kt:coil-compose:2.4.0")
+                implementation("io.ktor:ktor-client-okhttp:2.3.7")
+                implementation("androidx.room:room-runtime:2.6.1")
+                implementation("androidx.room:room-ktx:2.6.1")
+            }
         }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
+        val iosMain by creating {
+            dependsOn(commonMain)
+            dependencies {
+                implementation("io.ktor:ktor-client-darwin:2.3.7")
+            }
         }
+        val iosTest by creating {
+            dependsOn(commonTest)
+        }
+        val iosX64Main by getting
+        val iosArm64Main by getting
+        val iosSimulatorArm64Main by getting
+        val iosX64Test by getting
+        val iosArm64Test by getting
+        val iosSimulatorArm64Test by getting
+
+        iosX64Main.dependsOn(iosMain)
+        iosArm64Main.dependsOn(iosMain)
+        iosSimulatorArm64Main.dependsOn(iosMain)
+        iosX64Test.dependsOn(iosTest)
+        iosArm64Test.dependsOn(iosTest)
+        iosSimulatorArm64Test.dependsOn(iosTest)
     }
 }
 

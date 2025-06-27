@@ -13,10 +13,14 @@ import com.nmichail.groovy_kmp.Greeting
 import com.nmichail.groovy_kmp.presentation.App
 import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
 import org.koin.android.ext.android.getKoin
+import android.util.Log
+import android.widget.Toast
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("MainActivityLC", "onCreate")
+        Toast.makeText(this, "onCreate", Toast.LENGTH_SHORT).show()
         setContent {
             MyApplicationTheme {
                 Surface(
@@ -27,5 +31,30 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+    override fun onStart() {
+        super.onStart()
+        Log.d("MainActivityLC", "onStart")
+        Toast.makeText(this, "onStart", Toast.LENGTH_SHORT).show()
+    }
+    override fun onResume() {
+        super.onResume()
+        Log.d("MainActivityLC", "onResume")
+        Toast.makeText(this, "onResume", Toast.LENGTH_SHORT).show()
+    }
+    override fun onPause() {
+        super.onPause()
+        Log.d("MainActivityLC", "onPause")
+        Toast.makeText(this, "onPause", Toast.LENGTH_SHORT).show()
+    }
+    override fun onStop() {
+        super.onStop()
+        Log.d("MainActivityLC", "onStop")
+        Toast.makeText(this, "onStop", Toast.LENGTH_SHORT).show()
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d("MainActivityLC", "onDestroy")
+        Toast.makeText(this, "onDestroy", Toast.LENGTH_SHORT).show()
     }
 }
