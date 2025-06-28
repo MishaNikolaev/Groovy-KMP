@@ -33,6 +33,7 @@ import org.koin.mp.KoinPlatform.getKoin
 import androidx.compose.runtime.*
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AllAlbumsScreen
 import moe.tlaster.precompose.navigation.BackHandler
 
 @Composable
@@ -40,12 +41,17 @@ fun HomeScreen() {
     val viewModel = remember { getKoin().get<HomeViewModel>() }
     val albums by viewModel.albums.collectAsState()
     var selectedAlbumId by rememberSaveable { mutableStateOf<String?>(null) }
+    var showAllAlbums by rememberSaveable { mutableStateOf(false) }
 
-    BackHandler(enabled = selectedAlbumId != null) {
-        selectedAlbumId = null
+    BackHandler(enabled = selectedAlbumId != null || showAllAlbums) {
+        if (selectedAlbumId != null) {
+            selectedAlbumId = null
+        } else if (showAllAlbums) {
+            showAllAlbums = false
+        }
     }
 
-    if (selectedAlbumId == null) {
+    if (selectedAlbumId == null && !showAllAlbums) {
         LaunchedEffect(viewModel) {
             viewModel.load()
         }
@@ -100,7 +106,7 @@ fun HomeScreen() {
                     println("Clicked album: title=${albumUi.title}, id=${albumUi.id}")
                     albumUi.id?.let { selectedAlbumId = it }
                 },
-                onViewAllClick = { /* TODO */ }
+                onViewAllClick = { showAllAlbums = true }
             )
             Spacer(modifier = Modifier.height(24.dp))
             ArtistsSection(
@@ -140,7 +146,16 @@ fun HomeScreen() {
             GenresCarousel()
             Spacer(modifier = Modifier.height(6.dp))
         }
+    } else if (showAllAlbums) {
+            AllAlbumsScreen(
+            onBack = { showAllAlbums = false },
+            onAlbumClick = { albumUi ->
+                albumUi.id?.let { selectedAlbumId = it }
+                showAllAlbums = false
+            }
+        )
     } else {
+        // Экран альбома
         val albumViewModel = remember { getKoin().get<com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel>() }
         val albumWithTracks by albumViewModel.state.collectAsState()
 

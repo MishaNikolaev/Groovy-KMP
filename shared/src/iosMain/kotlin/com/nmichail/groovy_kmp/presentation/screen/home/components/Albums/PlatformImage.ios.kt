@@ -8,9 +8,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.graphics.Color
 
 @Composable
-actual fun PlatformImage(url: String?, contentDescription: String?) {
+actual fun PlatformImage(
+    url: String?, 
+    contentDescription: String?, 
+    modifier: Modifier,
+    onColorExtracted: ((Color) -> Unit)?
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(Color.LightGray)
     )

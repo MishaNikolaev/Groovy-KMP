@@ -35,7 +35,12 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-expect fun PlatformImage(url: String?, contentDescription: String?, modifier: Modifier = Modifier)
+expect fun PlatformImage(
+    url: String?, 
+    contentDescription: String?, 
+    modifier: Modifier = Modifier,
+    onColorExtracted: ((Color) -> Unit)? = null
+)
 
 @Composable
 fun AlbumsSection(

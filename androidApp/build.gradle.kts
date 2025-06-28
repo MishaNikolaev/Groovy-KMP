@@ -56,4 +56,6 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
+    // Palette for color extraction
+    implementation("androidx.palette:palette-ktx:1.0.0")
 }
