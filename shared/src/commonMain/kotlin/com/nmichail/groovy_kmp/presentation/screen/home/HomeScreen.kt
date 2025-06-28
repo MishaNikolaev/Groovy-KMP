@@ -33,12 +33,17 @@ import org.koin.mp.KoinPlatform.getKoin
 import androidx.compose.runtime.*
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen
 import androidx.compose.runtime.saveable.rememberSaveable
+import moe.tlaster.precompose.navigation.BackHandler
 
 @Composable
 fun HomeScreen() {
     val viewModel = remember { getKoin().get<HomeViewModel>() }
     val albums by viewModel.albums.collectAsState()
     var selectedAlbumId by rememberSaveable { mutableStateOf<String?>(null) }
+
+    BackHandler(enabled = selectedAlbumId != null) {
+        selectedAlbumId = null
+    }
 
     if (selectedAlbumId == null) {
         LaunchedEffect(viewModel) {
