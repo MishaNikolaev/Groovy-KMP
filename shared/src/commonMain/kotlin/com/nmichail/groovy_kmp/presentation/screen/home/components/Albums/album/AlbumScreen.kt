@@ -69,7 +69,7 @@ fun AlbumScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(440.dp)
+                    .height(450.dp)
                     .background(backgroundColor)
             ) {
                 IconButton(
@@ -110,10 +110,25 @@ fun AlbumScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 48.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        horizontalArrangement = Arrangement.Center
                     ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(Color.LightGray)
+                        ) {
+                            PlatformImage(
+                                url = albumWithTracks.album.artistPhotoUrl,
+                                contentDescription = albumWithTracks.album.artist,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = albumWithTracks.album.artist ?: "",
                             style = MaterialTheme.typography.bodyLarge.copy(
@@ -124,15 +139,14 @@ fun AlbumScreen(
                             modifier = Modifier.clickable { albumWithTracks.album.artist?.let { onArtistClick(it) } }
                         )
                         if (!albumWithTracks.album.createdAt.isNullOrBlank()) {
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Spacer(modifier = Modifier.width(16.dp))
                             Text(
                                 text = albumWithTracks.album.createdAt ?: "",
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     fontWeight = FontWeight.Normal,
                                     color = Color.White,
                                     fontSize = 18.sp
-                                ),
-                                modifier = Modifier.padding(start = 8.dp)
+                                )
                             )
                         }
                     }
