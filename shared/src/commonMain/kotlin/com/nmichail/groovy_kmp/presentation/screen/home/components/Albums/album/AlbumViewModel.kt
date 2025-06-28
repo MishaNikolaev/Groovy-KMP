@@ -1,4 +1,4 @@
-package com.nmichail.groovy_kmp.presentation.screen.album
+package com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album
 
 import com.nmichail.groovy_kmp.domain.models.AlbumWithTracks
 import com.nmichail.groovy_kmp.domain.usecases.GetAlbumWithTracksUseCase

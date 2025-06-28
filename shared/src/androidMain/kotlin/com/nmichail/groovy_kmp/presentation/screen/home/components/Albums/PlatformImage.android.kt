@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.graphics.Color
 
 @Composable
-actual fun PlatformImage(url: String?, contentDescription: String?) {
+actual fun PlatformImage(url: String?, contentDescription: String?, modifier: Modifier) {
     if (url != null) { // it's for loading images, vou
         AsyncImage(
             model = url,

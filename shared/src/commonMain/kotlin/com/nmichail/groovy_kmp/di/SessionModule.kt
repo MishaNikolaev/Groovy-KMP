@@ -12,7 +12,7 @@ import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
 import com.nmichail.groovy_kmp.domain.repository.TrackRepository
 import com.nmichail.groovy_kmp.domain.repository.PlayerRepository
 import com.nmichail.groovy_kmp.domain.usecases.GetAlbumWithTracksUseCase
-import com.nmichail.groovy_kmp.presentation.screen.album.AlbumViewModel
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
 import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
 import org.koin.dsl.module
