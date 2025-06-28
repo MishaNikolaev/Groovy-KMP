@@ -23,6 +23,10 @@ class AlbumViewModel(
             return
         }
         
+        if (lastLoadedAlbumId != albumId) {
+            _state.value = null
+        }
+        
         viewModelScope.launch {
             println("AlbumViewModel: loading album with id=$albumId")
             try {
