@@ -121,7 +121,7 @@ fun AlbumScreen(
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.Normal,
                                 color = Color.White,
-                                fontSize = 15.sp
+                                fontSize = 18.sp
                             ),
                             modifier = Modifier.padding(start = 8.dp)
                         )

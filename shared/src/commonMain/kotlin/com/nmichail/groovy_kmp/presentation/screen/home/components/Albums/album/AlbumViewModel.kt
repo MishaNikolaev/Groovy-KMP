@@ -15,14 +15,21 @@ class AlbumViewModel(
     private val viewModelScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val _state = MutableStateFlow<AlbumWithTracks?>(null)
     val state: StateFlow<AlbumWithTracks?> = _state
+    
+    private var lastLoadedAlbumId: String? = null
 
     fun load(albumId: String) {
+        if (lastLoadedAlbumId == albumId && _state.value != null) {
+            return
+        }
+        
         viewModelScope.launch {
             println("AlbumViewModel: loading album with id=$albumId")
             try {
                 val albumWithTracks = getAlbumWithTracksUseCase(albumId)
                 println("AlbumViewModel: loaded $albumWithTracks")
                 _state.value = albumWithTracks
+                lastLoadedAlbumId = albumId
             } catch (e: Exception) {
                 println("AlbumViewModel: error loading album: ${e.message}")
             }

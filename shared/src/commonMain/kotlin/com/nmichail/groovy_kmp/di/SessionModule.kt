@@ -26,7 +26,7 @@ val sessionModuleCommon = module {
     single<TrackRepository> { TrackRepositoryImpl(get()) }
     single { GetAlbumWithTracksUseCase(get(), get()) }
     single<PlayerRepository> { PlayerRepositoryImpl() }
-    factory { AlbumViewModel(get()) }
+    single { AlbumViewModel(get()) }
     factory { PlayerViewModel(get()) }
     factory { HomeViewModel(get(), get()) }
 } 

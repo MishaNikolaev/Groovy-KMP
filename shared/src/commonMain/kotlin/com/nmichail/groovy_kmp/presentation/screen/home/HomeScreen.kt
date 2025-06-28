@@ -32,12 +32,13 @@ import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
 import org.koin.mp.KoinPlatform.getKoin
 import androidx.compose.runtime.*
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen
+import androidx.compose.runtime.saveable.rememberSaveable
 
 @Composable
 fun HomeScreen() {
     val viewModel = remember { getKoin().get<HomeViewModel>() }
     val albums by viewModel.albums.collectAsState()
-    var selectedAlbumId by remember { mutableStateOf<String?>(null) }
+    var selectedAlbumId by rememberSaveable { mutableStateOf<String?>(null) }
 
     if (selectedAlbumId == null) {
         LaunchedEffect(viewModel) {
