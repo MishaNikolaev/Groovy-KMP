@@ -43,6 +43,12 @@ import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
+import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumUi
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumCard
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.Arrangement
 
 @Composable
 fun AlbumScreen(
@@ -62,6 +68,8 @@ fun AlbumScreen(
     
     val albumViewModel = getKoin().get<AlbumViewModel>()
     val backgroundColor = albumViewModel.getBackgroundColor()
+
+    val currentAlbum = albumWithTracks.album
 
     LazyColumn(
         modifier = Modifier

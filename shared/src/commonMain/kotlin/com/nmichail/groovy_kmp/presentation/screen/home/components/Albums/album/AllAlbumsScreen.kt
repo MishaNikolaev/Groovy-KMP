@@ -51,7 +51,7 @@ fun AllAlbumsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F8FC))
+            .background(Color.White)
     ) {
         Row(
             modifier = Modifier
