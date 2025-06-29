@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 import org.jetbrains.compose.resources.DrawableResource
 
 
@@ -43,7 +44,8 @@ fun ArtistsSection(
                 text = title,
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
+                    fontSize = 22.sp,
+                    fontFamily = AlbumFontFamily
                 ),
                 modifier = Modifier.weight(1f)
             )
@@ -59,7 +61,8 @@ fun ArtistsSection(
                     text = "View All",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color.DarkGray,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = AlbumFontFamily
                     )
                 )
                 Icon(

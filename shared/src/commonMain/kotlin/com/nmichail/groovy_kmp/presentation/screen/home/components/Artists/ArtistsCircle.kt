@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
@@ -48,7 +49,10 @@ fun ArtistCircle(name: String, imageRes: DrawableResource, onClick: () -> Unit) 
         Spacer(modifier = Modifier.height(10.dp))
         Text(
             text = name,
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = AlbumFontFamily
+            ),
             maxLines = 2
         )
     }

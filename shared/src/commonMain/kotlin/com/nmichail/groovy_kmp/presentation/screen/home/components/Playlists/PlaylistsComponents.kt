@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
@@ -52,7 +53,8 @@ fun PlaylistsSection(
                 text = "Playlists",
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
+                    fontSize = 22.sp,
+                    fontFamily = AlbumFontFamily
                 ),
                 modifier = Modifier.weight(1f)
             )
@@ -66,7 +68,8 @@ fun PlaylistsSection(
                     text = "View All",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color.DarkGray,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = AlbumFontFamily
                     )
                 )
                 Icon(
@@ -120,7 +123,8 @@ fun PlaylistCard(playlist: PlaylistUi, onClick: () -> Unit) {
             text = playlist.title,
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
+                fontSize = 16.sp,
+                fontFamily = AlbumFontFamily
             ),
             maxLines = 1
         )

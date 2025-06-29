@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 import groovy_kmp.shared.generated.resources.Res
 import groovy_kmp.shared.generated.resources.playlist_example
 import org.jetbrains.compose.resources.DrawableResource
@@ -90,13 +91,18 @@ fun PlaylistPreview(
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = AlbumFontFamily
+                ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.Gray
+                ),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )

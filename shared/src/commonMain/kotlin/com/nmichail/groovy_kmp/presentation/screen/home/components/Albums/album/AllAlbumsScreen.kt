@@ -23,6 +23,7 @@ import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
 import org.koin.mp.KoinPlatform.getKoin
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.text.style.TextAlign
+import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumUi
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
 
@@ -67,7 +68,8 @@ fun AllAlbumsScreen(
                 text = "All Albums",
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
+                    fontSize = 20.sp,
+                    fontFamily = AlbumFontFamily
                 )
             )
         }
@@ -121,7 +123,7 @@ fun AlbumGridCard(album: AlbumUi, onClick: () -> Unit) {
             text = album.title,
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp
+                fontFamily = AlbumFontFamily
             ),
             maxLines = 2,
             textAlign = TextAlign.Center
@@ -131,7 +133,7 @@ fun AlbumGridCard(album: AlbumUi, onClick: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium.copy(
                 color = Color.Gray,
                 fontWeight = FontWeight.Medium,
-                fontSize = 12.sp
+                fontSize = 14.sp
             ),
             maxLines = 1,
             textAlign = TextAlign.Center

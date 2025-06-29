@@ -77,23 +77,36 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation("io.coil-kt:coil-compose:2.4.0")
-                implementation("io.ktor:ktor-client-okhttp:2.3.7")
-                implementation("androidx.room:room-runtime:2.6.1")
-                implementation("androidx.room:room-ktx:2.6.1")
+            implementation("io.ktor:ktor-client-okhttp:2.3.7")
+            implementation("androidx.room:room-runtime:2.6.1")
+            implementation("androidx.room:room-ktx:2.6.1")
             }
         }
         val iosMain by creating {
             dependsOn(commonMain)
             dependencies {
                 implementation("io.ktor:ktor-client-darwin:2.3.7")
+                implementation("media.kamel:kamel-image:0.5.0")
             }
         }
         val iosTest by creating {
             dependsOn(commonTest)
         }
-        val iosX64Main by getting
-        val iosArm64Main by getting
-        val iosSimulatorArm64Main by getting
+        val iosX64Main by getting {
+            dependencies {
+                implementation("media.kamel:kamel-image:0.5.0")
+            }
+        }
+        val iosArm64Main by getting {
+            dependencies {
+                implementation("media.kamel:kamel-image:0.5.0")
+            }
+        }
+        val iosSimulatorArm64Main by getting {
+            dependencies {
+                implementation("media.kamel:kamel-image:0.5.0")
+            }
+        }
         val iosX64Test by getting
         val iosArm64Test by getting
         val iosSimulatorArm64Test by getting

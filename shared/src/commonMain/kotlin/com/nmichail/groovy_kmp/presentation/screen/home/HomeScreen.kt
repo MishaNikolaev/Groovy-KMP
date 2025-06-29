@@ -33,6 +33,7 @@ import org.koin.mp.KoinPlatform.getKoin
 import androidx.compose.runtime.*
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AllAlbumsScreen
 import moe.tlaster.precompose.navigation.BackHandler
 
@@ -82,7 +83,8 @@ fun HomeScreen() {
                         text = "Groovy",
                         style = MaterialTheme.typography.headlineSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp
+                            fontSize = 24.sp,
+                            fontFamily = AlbumFontFamily
                         )
                     )
                 }
@@ -135,7 +137,10 @@ fun HomeScreen() {
             Spacer(modifier = Modifier.height(36.dp))
             Text(
                 text = "This is — Neuromusic",
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = AlbumFontFamily
+                ),
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(

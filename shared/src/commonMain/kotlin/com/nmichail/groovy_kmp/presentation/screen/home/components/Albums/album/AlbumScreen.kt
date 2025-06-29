@@ -40,6 +40,9 @@ import androidx.compose.ui.draw.scale
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AnimatedPlayingIndicator
 import androidx.compose.runtime.LaunchedEffect
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 
 @Composable
 fun AlbumScreen(
@@ -104,6 +107,7 @@ fun AlbumScreen(
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
+                            fontFamily = AlbumFontFamily,
                             color = Color.White
                         ),
                         maxLines = 2
@@ -116,36 +120,33 @@ fun AlbumScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(Color.LightGray)
+                        val author = albumWithTracks.album.artist ?: ""
+                        val year = albumWithTracks.album.createdAt ?: ""
+                        val authorYear = if (author.isNotBlank() && year.isNotBlank()) "$author · $year" else author + year
+                        Row(
+                            modifier = Modifier.clickable(enabled = author.isNotBlank()) { albumWithTracks.album.artist?.let { onArtistClick(it) } },
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            PlatformImage(
-                                url = albumWithTracks.album.artistPhotoUrl,
-                                contentDescription = albumWithTracks.album.artist,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = albumWithTracks.album.artist ?: "",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 18.sp,
-                                color = Color.White
-                            ),
-                            modifier = Modifier.clickable { albumWithTracks.album.artist?.let { onArtistClick(it) } }
-                        )
-                        if (!albumWithTracks.album.createdAt.isNullOrBlank()) {
-                            Spacer(modifier = Modifier.width(16.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.LightGray)
+                            ) {
+                                PlatformImage(
+                                    url = albumWithTracks.album.artistPhotoUrl,
+                                    contentDescription = albumWithTracks.album.artist,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = albumWithTracks.album.createdAt ?: "",
+                                text = authorYear,
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     fontWeight = FontWeight.Normal,
-                                    color = Color.White,
-                                    fontSize = 18.sp
+                                    fontSize = 16.sp,
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    fontFamily = AlbumFontFamily
                                 )
                             )
                         }
@@ -227,22 +228,45 @@ fun AlbumScreen(
                         Text(
                             text = "${index + 1}",
                             style = MaterialTheme.typography.bodyLarge.copy(
-                                color = Color.Gray,
                                 fontWeight = FontWeight.Normal,
-                                fontSize = 18.sp
-                            )
+                                fontSize = 18.sp,
+                            ),
+                            color = Color.Gray
                         )
                     }
                 }
-                Text(
-                    text = track.title,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        color = Color.Black,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 18.sp
-                    ),
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(
                     modifier = Modifier.weight(1f)
-                )
+                ) {
+                    Text(
+                        text = track.title ?: "",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 18.sp,
+                        ),
+                        maxLines = 1
+                    )
+                    Text(
+                        text = track.artist ?: "",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 16.sp,
+                        ),
+                        color = Color.Gray,
+                        maxLines = 1
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                /*Text(
+                    text = track.duration ?: "",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 16.sp,
+                        fontFamily = AlbumFontFamily
+                    ),
+                    color = Color.Gray
+                )*/
             }
         }
         

@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 
 
 @Composable
@@ -66,7 +67,8 @@ fun GenreCard(text: String, brush: Brush, modifier: Modifier = Modifier) {
                     text = text,
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp
+                        fontSize = 22.sp,
+                        fontFamily = AlbumFontFamily
                     ),
                     color = Color.White,
                     textAlign = TextAlign.Center

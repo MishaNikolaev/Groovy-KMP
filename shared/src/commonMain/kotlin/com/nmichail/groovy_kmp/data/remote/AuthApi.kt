@@ -19,7 +19,7 @@ class AuthApi(private val client: HttpClient) {
             try {
                 val request = AuthRequest(email = email, password = password, username = email)
                 val response: HttpResponse = client.post("http://${getServerHost()}:8080/auth/login") {
-                    contentType(ContentType.Application.Json)
+                contentType(ContentType.Application.Json)
                     setBody(request)
                 }
                 val responseBody = response.body<AuthResponse>()
