@@ -25,4 +25,4 @@ val appModule = module {
     single { RegisterUseCase(get()) }
 }
 
-val allModules = listOf(appModule, sessionModuleCommon)
+val allModules = listOf(appModule, sessionModuleCommon, playerModule)

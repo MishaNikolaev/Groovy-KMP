@@ -4,12 +4,9 @@ import android.content.Context
 import com.nmichail.groovy_kmp.data.manager.SessionManager
 import com.nmichail.groovy_kmp.data.local.datasource.UserSessionDataSource
 import com.nmichail.groovy_kmp.android.local.datasource.UserSessionDataSourceImpl
-import com.nmichail.groovy_kmp.domain.repository.PlayerRepository
-import com.nmichail.groovy_kmp.android.PlayerRepositoryImpl
 import org.koin.dsl.module
 
 val sessionModuleAndroid = module {
     single<UserSessionDataSource> { UserSessionDataSourceImpl(get<Context>()) }
     single { SessionManager(get()) }
-    single<PlayerRepository> { PlayerRepositoryImpl(get<Context>()) }
 } 

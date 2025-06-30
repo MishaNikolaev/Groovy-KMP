@@ -7,13 +7,10 @@ import com.nmichail.groovy_kmp.data.remote.AlbumApi
 import com.nmichail.groovy_kmp.data.remote.TrackApi
 import com.nmichail.groovy_kmp.data.repository.AlbumRepositoryImpl
 import com.nmichail.groovy_kmp.data.repository.TrackRepositoryImpl
-import com.nmichail.groovy_kmp.data.repository.PlayerRepositoryImpl
 import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
 import com.nmichail.groovy_kmp.domain.repository.TrackRepository
-import com.nmichail.groovy_kmp.domain.repository.PlayerRepository
 import com.nmichail.groovy_kmp.domain.usecases.GetAlbumWithTracksUseCase
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
-import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
 import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
 import org.koin.dsl.module
 
@@ -25,8 +22,6 @@ val sessionModuleCommon = module {
     single<AlbumRepository> { AlbumRepositoryImpl(get()) }
     single<TrackRepository> { TrackRepositoryImpl(get()) }
     single { GetAlbumWithTracksUseCase(get(), get()) }
-    single<PlayerRepository> { PlayerRepositoryImpl() }
     single { AlbumViewModel(get()) }
-    factory { PlayerViewModel(get()) }
     factory { HomeViewModel(get(), get()) }
 } 

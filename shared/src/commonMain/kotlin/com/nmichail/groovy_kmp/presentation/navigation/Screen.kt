@@ -3,6 +3,7 @@ package com.nmichail.groovy_kmp.presentation.navigation
 sealed class Screen(val route: String) {
     data object Login : Screen("login")
     data object Register : Screen("register")
+    data object FullPlayer : Screen("full_player")
     
     sealed class MainSection(route: String) : Screen(route) {
         data object Home : MainSection("home")

@@ -49,6 +49,9 @@ import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumC
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.runtime.rememberCoroutineScope
+import com.nmichail.groovy_kmp.domain.models.Track
+import kotlinx.coroutines.launch
 
 @Composable
 fun AlbumScreen(
@@ -60,14 +63,14 @@ fun AlbumScreen(
     onPauseClick: () -> Unit,
     onTrackClick: (trackId: String) -> Unit
 ) {
-    val playerViewModel = getKoin().get<PlayerViewModel>()
-    val playerState by playerViewModel.state.collectAsState()
-    val currentTrack by playerViewModel.currentTrack.collectAsState()
-    val isPlaying = playerState is PlayerState.Playing
-    val hasTrack = currentTrack != null
-    
-    val albumViewModel = getKoin().get<AlbumViewModel>()
+    val playerViewModel = remember { getKoin().get<PlayerViewModel>() }
+    val playerInfo by playerViewModel.playerInfo.collectAsState()
+    val isPlaying = playerInfo.state is PlayerState.Playing
+    val currentTrack = playerInfo.track
+
+    val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val backgroundColor = albumViewModel.getBackgroundColor()
+    val coroutineScope = rememberCoroutineScope()
 
     val currentAlbum = albumWithTracks.album
 
@@ -105,7 +108,7 @@ fun AlbumScreen(
                             .background(Color.LightGray)
                     ) {
                         PlatformImage(
-                            url = albumWithTracks.album.coverUrl, 
+                            url = albumWithTracks.album.coverUrl,
                             contentDescription = albumWithTracks.album.title
                         )
                     }
@@ -181,13 +184,17 @@ fun AlbumScreen(
                         Spacer(modifier = Modifier.width(48.dp))
                         IconButton(
                             onClick = {
-                                if (!hasTrack && albumWithTracks.tracks.isNotEmpty()) {
-                                    playerViewModel.play(albumWithTracks.tracks.first())
-                                } else {
-                                    if (isPlaying) {
-                                        playerViewModel.pause()
+                                coroutineScope.launch {
+                                    val firstTrack = albumWithTracks.tracks.firstOrNull()
+                                    if (currentTrack?.id != firstTrack?.id) {
+                                        playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
+                                        firstTrack?.let { playerViewModel.play(it) }
                                     } else {
-                                        playerViewModel.resume()
+                                        if (isPlaying) {
+                                            playerViewModel.pause()
+                                        } else {
+                                            playerViewModel.resume()
+                                        }
                                     }
                                 }
                             },
@@ -212,72 +219,233 @@ fun AlbumScreen(
         }
 
         itemsIndexed(albumWithTracks.tracks) { index, track ->
-            Row(
+            TrackRow(
+                track = track,
+                isPlaying = isPlaying && currentTrack?.id == track.id,
+                onClick = {
+                    coroutineScope.launch {
+                        if (currentTrack?.id != track.id) {
+                            playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
+                        }
+                        playerViewModel.play(track)
+                    }
+                }
+            )
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(40.dp))
+        }
+    }
+}
+
+@Composable
+fun TrackRow(track: com.nmichail.groovy_kmp.domain.models.Track, isPlaying: Boolean, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = track.title ?: "",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            )
+            Text(
+                text = track.artist ?: "",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+            )
+        }
+        if (isPlaying) {
+            AnimatedPlayingIndicator()
+        }
+    }
+}
+
+@Composable
+fun AllAlbumsScreen(
+    albumWithTracks: AlbumWithTracks,
+    onBack: () -> Unit,
+    onArtistClick: (String) -> Unit,
+    onLikeClick: () -> Unit,
+    onPlayClick: () -> Unit,
+    onPauseClick: () -> Unit,
+    onTrackClick: (trackId: String) -> Unit
+) {
+    val playerViewModel = remember { getKoin().get<PlayerViewModel>() }
+    val playerInfo by playerViewModel.playerInfo.collectAsState()
+    val isPlaying = playerInfo.state is PlayerState.Playing
+    val currentTrack = playerInfo.track
+
+    val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
+    val backgroundColor = albumViewModel.getBackgroundColor()
+    val coroutineScope = rememberCoroutineScope()
+
+    val currentAlbum = albumWithTracks.album
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
+        item {
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        track.id?.let {
-                            val found = albumWithTracks.tracks.find { t -> t.id == it }
-                            if (found != null) playerViewModel.play(found)
-                            onTrackClick(it)
-                        }
-                    }
-                    .background(Color.White)
-                    .padding(vertical = 12.dp, horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .height(450.dp)
+                    .background(backgroundColor)
             ) {
-                Box(
-                    modifier = Modifier.width(24.dp),
-                    contentAlignment = Alignment.CenterStart
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
                 ) {
-                    if (currentTrack?.id == track.id && isPlaying) {
-                        AnimatedPlayingIndicator()
-                    } else {
-                        Text(
-                            text = "${index + 1}",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 18.sp,
-                            ),
-                            color = Color.Gray
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp)
+                        .align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(200.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.LightGray)
+                    ) {
+                        PlatformImage(
+                            url = albumWithTracks.album.coverUrl,
+                            contentDescription = albumWithTracks.album.title
                         )
                     }
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = track.title ?: "",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 18.sp,
+                        text = albumWithTracks.album.title ?: "",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = AlbumFontFamily,
+                            color = Color.White
                         ),
-                        maxLines = 1
+                        maxLines = 2
                     )
-                    Text(
-                        text = track.artist ?: "",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 16.sp,
-                        ),
-                        color = Color.Gray,
-                        maxLines = 1
-                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 48.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        val author = albumWithTracks.album.artist ?: ""
+                        val year = albumWithTracks.album.createdAt ?: ""
+                        val authorYear = if (author.isNotBlank() && year.isNotBlank()) "$author · $year" else author + year
+                        Row(
+                            modifier = Modifier.clickable(enabled = author.isNotBlank()) { albumWithTracks.album.artist?.let { onArtistClick(it) } },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.LightGray)
+                            ) {
+                                PlatformImage(
+                                    url = albumWithTracks.album.artistPhotoUrl,
+                                    contentDescription = albumWithTracks.album.artist,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = authorYear,
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 16.sp,
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    fontFamily = AlbumFontFamily
+                                )
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        IconButton(
+                            onClick = onLikeClick,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(Color(0x33AAAAAA), shape = CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.FavoriteBorder,
+                                contentDescription = "Like",
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(48.dp))
+                        IconButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    val firstTrack = albumWithTracks.tracks.firstOrNull()
+                                    if (currentTrack?.id != firstTrack?.id) {
+                                        playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
+                                    }
+                                    playerViewModel.play(firstTrack ?: return@launch)
+                                }
+                            },
+                            modifier = Modifier
+                                .size(56.dp)
+                                .background(Color(0xFFFFD600), shape = CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                                contentDescription = if (isPlaying) "Pause" else "Play",
+                                tint = Color.Black,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.width(16.dp))
-                /*Text(
-                    text = track.duration ?: "",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 16.sp,
-                        fontFamily = AlbumFontFamily
-                    ),
-                    color = Color.Gray
-                )*/
             }
         }
-        
+
+        item {
+            Spacer(modifier = Modifier.height(14.dp))
+        }
+
+        itemsIndexed(albumWithTracks.tracks) { index, track ->
+            TrackRow(
+                track = track,
+                isPlaying = isPlaying && currentTrack?.id == track.id,
+                onClick = {
+                    coroutineScope.launch {
+                        if (currentTrack?.id != track.id) {
+                            playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
+                        }
+                        playerViewModel.play(track)
+                    }
+                }
+            )
+        }
+
         item {
             Spacer(modifier = Modifier.height(40.dp))
         }
