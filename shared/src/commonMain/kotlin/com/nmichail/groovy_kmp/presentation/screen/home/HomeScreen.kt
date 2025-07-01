@@ -160,7 +160,6 @@ fun HomeScreen() {
             }
         )
     } else {
-        // Экран альбома
         val albumViewModel = remember { getKoin().get<com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel>() }
         val albumWithTracks by albumViewModel.state.collectAsState()
 

@@ -174,7 +174,6 @@ fun FullPlayerScreen(
                 )
             }
             
-            // Previous button
             IconButton(
                 onClick = onPreviousClick,
                 modifier = Modifier.size(56.dp)
@@ -187,7 +186,6 @@ fun FullPlayerScreen(
                 )
             }
             
-            // Play/Pause button
             IconButton(
                 onClick = onPlayPauseClick,
                 modifier = Modifier
@@ -242,7 +240,6 @@ fun FullPlayerScreen(
         
         Spacer(modifier = Modifier.weight(1f))
         
-        // Additional controls
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly

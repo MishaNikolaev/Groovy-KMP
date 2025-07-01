@@ -41,7 +41,6 @@ fun PlayerBar(
     var isDragging by remember { mutableStateOf(false) }
     var dragProgress by remember { mutableStateOf(progress) }
 
-    // This ensures dragProgress is updated when the track progresses naturally
     LaunchedEffect(progress) {
         if (!isDragging) {
             dragProgress = progress
@@ -61,7 +60,6 @@ fun PlayerBar(
                 .fillMaxSize()
                 .background(Color.White)
         ) {
-            // Progress bar
             Slider(
                 value = if (isDragging) dragProgress else progress,
                 onValueChange = { newProgress ->
@@ -74,7 +72,7 @@ fun PlayerBar(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp), // Increased height for better touch target
+                    .height(8.dp),
                 colors = SliderDefaults.colors(
                     thumbColor = Color(0xFFE94057),
                     activeTrackColor = Color(0xFFE94057),
@@ -82,14 +80,12 @@ fun PlayerBar(
                 )
             )
             
-            // Main content
             Row(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Track cover
                 Box(
                     modifier = Modifier
                         .size(48.dp)
@@ -105,7 +101,6 @@ fun PlayerBar(
                 
                 Spacer(modifier = Modifier.width(12.dp))
                 
-                // Track info with scrolling text
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -131,12 +126,10 @@ fun PlayerBar(
                 
                 Spacer(modifier = Modifier.width(8.dp))
                 
-                // Control buttons
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Previous button
                     IconButton(
                         onClick = onPreviousClick,
                         modifier = Modifier.size(40.dp)
@@ -149,7 +142,6 @@ fun PlayerBar(
                         )
                     }
                     
-                    // Play/Pause button
                     IconButton(
                         onClick = onPlayPauseClick,
                         modifier = Modifier
@@ -171,7 +163,6 @@ fun PlayerBar(
                         )
                     }
                     
-                    // Next button
                     IconButton(
                         onClick = onNextClick,
                         modifier = Modifier.size(40.dp)
