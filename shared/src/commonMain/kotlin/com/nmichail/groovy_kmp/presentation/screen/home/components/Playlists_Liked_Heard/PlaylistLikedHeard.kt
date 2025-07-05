@@ -106,6 +106,7 @@ fun PlaylistPreview(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+
         }
     }
 }
