@@ -67,7 +67,7 @@ fun AlbumScreen(
     val playerInfo by playerViewModel.playerInfo.collectAsState()
     val isPlaying = playerInfo.state is PlayerState.Playing
     val currentTrack = playerInfo.track
-
+    
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val backgroundColor = albumViewModel.getBackgroundColor()
     val coroutineScope = rememberCoroutineScope()
@@ -108,7 +108,7 @@ fun AlbumScreen(
                             .background(Color.LightGray)
                     ) {
                         PlatformImage(
-                            url = albumWithTracks.album.coverUrl,
+                            url = albumWithTracks.album.coverUrl, 
                             contentDescription = albumWithTracks.album.title
                         )
                     }
@@ -188,12 +188,12 @@ fun AlbumScreen(
                                     val firstTrack = albumWithTracks.tracks.firstOrNull()
                                     if (currentTrack?.id != firstTrack?.id) {
                                         playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
-                                        firstTrack?.let { playerViewModel.play(it) }
+                                        firstTrack?.let { playerViewModel.play(albumWithTracks.tracks, it) }
                                     } else {
                                         if (isPlaying) {
-                                            playerViewModel.pause()
+                                            playerViewModel.pause(albumWithTracks.tracks, currentTrack ?: return@launch)
                                         } else {
-                                            playerViewModel.resume()
+                                            playerViewModel.resume(albumWithTracks.tracks, currentTrack ?: return@launch)
                                         }
                                     }
                                 }
@@ -224,10 +224,8 @@ fun AlbumScreen(
                 isPlaying = isPlaying && currentTrack?.id == track.id,
                 onClick = {
                     coroutineScope.launch {
-                        if (currentTrack?.id != track.id) {
-                            playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
-                        }
-                        playerViewModel.play(track)
+                        playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
+                        playerViewModel.play(albumWithTracks.tracks, track)
                     }
                 }
             )
@@ -235,7 +233,7 @@ fun AlbumScreen(
 
         item {
             Spacer(modifier = Modifier.height(40.dp))
-        }
+                    }
     }
 }
 
@@ -248,19 +246,19 @@ fun TrackRow(track: com.nmichail.groovy_kmp.domain.models.Track, isPlaying: Bool
             .clickable(onClick = onClick)
             .padding(vertical = 12.dp, horizontal = 24.dp)
     ) {
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = track.title ?: "",
-                style = MaterialTheme.typography.bodyLarge.copy(
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = track.title ?: "",
+                        style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
-            )
-            Text(
-                text = track.artist ?: "",
-                style = MaterialTheme.typography.bodyMedium.copy(
+                    )
+                    Text(
+                        text = track.artist ?: "",
+                        style = MaterialTheme.typography.bodyMedium.copy(
                     color = Color.Gray,
                     fontSize = 14.sp
                 )
@@ -329,8 +327,8 @@ fun AllAlbumsScreen(
                         PlatformImage(
                             url = albumWithTracks.album.coverUrl,
                             contentDescription = albumWithTracks.album.title
-                        )
-                    }
+                    )
+                }
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = albumWithTracks.album.title ?: "",
@@ -373,10 +371,10 @@ fun AllAlbumsScreen(
                             Text(
                                 text = authorYear,
                                 style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Normal,
-                                    fontSize = 16.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 16.sp,
                                     color = Color.White.copy(alpha = 0.7f),
-                                    fontFamily = AlbumFontFamily
+                        fontFamily = AlbumFontFamily
                                 )
                             )
                         }
@@ -408,7 +406,7 @@ fun AllAlbumsScreen(
                                     if (currentTrack?.id != firstTrack?.id) {
                                         playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
                                     }
-                                    playerViewModel.play(firstTrack ?: return@launch)
+                                    firstTrack?.let { playerViewModel.play(albumWithTracks.tracks, it) }
                                 }
                             },
                             modifier = Modifier
@@ -440,12 +438,12 @@ fun AllAlbumsScreen(
                         if (currentTrack?.id != track.id) {
                             playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
                         }
-                        playerViewModel.play(track)
+                        playerViewModel.play(albumWithTracks.tracks, track)
                     }
                 }
             )
         }
-
+        
         item {
             Spacer(modifier = Modifier.height(40.dp))
         }

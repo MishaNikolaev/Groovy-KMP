@@ -77,9 +77,15 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation("io.coil-kt:coil-compose:2.4.0")
-            implementation("io.ktor:ktor-client-okhttp:2.3.7")
-            implementation("androidx.room:room-runtime:2.6.1")
-            implementation("androidx.room:room-ktx:2.6.1")
+                implementation("io.ktor:ktor-client-okhttp:2.3.7")
+                implementation("androidx.room:room-runtime:2.6.1")
+                implementation("androidx.room:room-ktx:2.6.1")
+                // Koin Android
+                implementation("io.insert-koin:koin-android:3.5.0")
+                // Android SDK
+                implementation("androidx.core:core-ktx:1.12.0")
+                implementation("androidx.appcompat:appcompat:1.6.1")
+                implementation("androidx.media:media:1.7.0")
             }
         }
         val iosMain by creating {

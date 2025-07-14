@@ -4,6 +4,7 @@ import HomeScreen
 import LoginViewModel
 import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
@@ -15,6 +16,8 @@ import com.nmichail.groovy_kmp.presentation.screen.profile.ProfileScreen
 import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
 import com.nmichail.groovy_kmp.data.manager.SessionManager
 import com.nmichail.groovy_kmp.data.local.model.UserSession
+import com.nmichail.groovy_kmp.domain.models.PlayerState
+import com.nmichail.groovy_kmp.presentation.screen.player.PlayerBar
 import moe.tlaster.precompose.navigation.NavHost
 import moe.tlaster.precompose.navigation.rememberNavigator
 import kotlinx.coroutines.CoroutineScope
@@ -104,12 +107,41 @@ private fun MainSection(
     userSession: UserSession?,
     onLogout: () -> Unit
 ) {
+    val playerViewModel = remember { getKoin().get<com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel>() }
+    val playerInfo by playerViewModel.playerInfo.collectAsState()
+    val currentTrack = playerInfo.track
+    val playerState = playerInfo.state
+    val progress = if (playerInfo.progress.totalDuration > 0) {
+        playerInfo.progress.currentPosition.toFloat() / playerInfo.progress.totalDuration
+    } else 0f
+
     Scaffold(
         bottomBar = {
-            BottomBar(
-                currentRoute = selectedTab.route,
-                onNavigate = onTabSelected
-            )
+            Column {
+                if (currentTrack != null) {
+                    PlayerBar(
+                        currentTrack = currentTrack,
+                        playerState = playerState,
+                        progress = progress,
+                        onPlayerBarClick = { /* TODO: открыть полный плеер */ },
+                        onPlayPauseClick = {
+                            if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack!!) else playerViewModel.resume(playerInfo.playlist, currentTrack!!)
+                        },
+                        onNextClick = { playerViewModel.skipToNext(playerInfo.playlist, currentTrack!!) },
+                        onPreviousClick = { playerViewModel.skipToPrevious(playerInfo.playlist, currentTrack!!) },
+                        onTrackProgressChanged = { newProgress ->
+                            val duration = playerInfo.progress.totalDuration
+                            if (duration > 0) {
+                                playerViewModel.onTrackProgressChanged(newProgress)
+                            }
+                        }
+                    )
+                }
+                BottomBar(
+                    currentRoute = selectedTab.route,
+                    onNavigate = onTabSelected
+                )
+            }
         }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {

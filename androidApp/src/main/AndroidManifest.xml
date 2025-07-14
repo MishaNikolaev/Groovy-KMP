@@ -22,7 +22,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".MusicPlayerService"
+            android:name="com.nmichail.groovy_kmp.platform.service.MusicPlayerService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
         <receiver

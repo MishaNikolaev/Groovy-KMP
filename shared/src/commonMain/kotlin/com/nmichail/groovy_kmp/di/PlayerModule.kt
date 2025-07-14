@@ -1,6 +1,8 @@
 package com.nmichail.groovy_kmp.di
 
 import com.nmichail.groovy_kmp.data.repository.PlayerRepositoryImpl
+import com.nmichail.groovy_kmp.domain.MusicServiceController
+import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.repository.PlayerRepository
 import com.nmichail.groovy_kmp.domain.usecases.*
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
@@ -42,5 +44,13 @@ val playerModule = module {
             setPlaylist = get()
         )
     }
-    factory { PlayerViewModel(get()) }
+    single<MusicServiceController> { object : MusicServiceController {
+        override fun play(playlist: List<Track>, index: Int) {}
+        override fun pause(playlist: List<Track>, index: Int) {}
+        override fun resume(playlist: List<Track>, index: Int) {}
+        override fun next(playlist: List<Track>, index: Int) {}
+        override fun previous(playlist: List<Track>, index: Int) {}
+        override fun seekTo(playlist: List<Track>, index: Int, position: Long) {}
+    } }
+    factory { PlayerViewModel(get(), get()) }
 } 

@@ -1,5 +1,7 @@
 package com.nmichail.groovy_kmp.presentation.screen.player
 
+import com.nmichail.groovy_kmp.data.repository.PlayerRepositoryImpl
+import com.nmichail.groovy_kmp.domain.MusicServiceController
 import com.nmichail.groovy_kmp.domain.models.PlayerInfo
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.usecases.PlayerUseCases
@@ -14,7 +16,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class PlayerViewModel(
-    private val playerUseCases: PlayerUseCases
+    private val playerUseCases: PlayerUseCases,
+    private val musicServiceController: MusicServiceController
 ) {
     private val viewModelScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
@@ -49,39 +52,40 @@ class PlayerViewModel(
     }
 
     fun setPlaylist(tracks: List<Track>, playlistName: String) {
+        println("[PlayerViewModel] setPlaylist called with playlistName: $playlistName, tracks: ${tracks.map { it.title }}")
         viewModelScope.launch {
             playerUseCases.setPlaylist(tracks, playlistName)
         }
     }
 
     fun onTrackProgressChanged(newProgress: Float) {
-        viewModelScope.launch {
-            val playerInfo = _playerInfo.value
-            val duration = playerInfo.progress.totalDuration
-            if (duration > 0) {
-                val newPosition = (duration * newProgress).toLong()
-                _currentPosition.value = newPosition
-                playerUseCases.seekTo(newPosition)
-            }
+        val playerInfo = _playerInfo.value
+        val duration = playerInfo.progress.totalDuration
+        if (duration > 0) {
+            val newPosition = (duration * newProgress).toLong()
+            _currentPosition.value = newPosition
+            val playlist = playerInfo.playlist
+            val index = playlist.indexOfFirst { it.id == playerInfo.track?.id }
+            musicServiceController.seekTo(playlist, if (index == -1) 0 else index, newPosition)
         }
     }
 
-    fun play(track: Track) {
-        viewModelScope.launch {
-            playerUseCases.playTrack(track)
-        }
+    fun play(playlist: List<Track>, track: Track) {
+        val index = playlist.indexOfFirst { it.id == track.id }
+        musicServiceController.play(playlist, if (index == -1) 0 else index)
+        viewModelScope.launch { playerUseCases.playTrack(track) }
     }
 
-    fun pause() {
-        viewModelScope.launch {
-            playerUseCases.pauseTrack()
-        }
+    fun pause(playlist: List<Track>, track: Track) {
+        val index = playlist.indexOfFirst { it.id == track.id }
+        musicServiceController.pause(playlist, if (index == -1) 0 else index)
+        viewModelScope.launch { playerUseCases.pauseTrack() }
     }
 
-    fun resume() {
-        viewModelScope.launch {
-            playerUseCases.resumeTrack()
-        }
+    fun resume(playlist: List<Track>, track: Track) {
+        val index = playlist.indexOfFirst { it.id == track.id }
+        musicServiceController.resume(playlist, if (index == -1) 0 else index)
+        viewModelScope.launch { playerUseCases.resumeTrack() }
     }
 
     fun stop() {
@@ -90,15 +94,23 @@ class PlayerViewModel(
         }
     }
 
-    fun skipToNext() {
-        viewModelScope.launch {
-            playerUseCases.skipToNext()
+    fun skipToNext(playlist: List<Track>, track: Track) {
+        val index = playlist.indexOfFirst { it.id == track.id }
+        val nextIndex = if (index == -1) 0 else (index + 1) % playlist.size
+        musicServiceController.next(playlist, nextIndex)
+        val nextTrack = playlist.getOrNull(nextIndex)
+        if (nextTrack != null) {
+            viewModelScope.launch { playerUseCases.playTrack(nextTrack) }
         }
     }
 
-    fun skipToPrevious() {
-        viewModelScope.launch {
-            playerUseCases.skipToPrevious()
+    fun skipToPrevious(playlist: List<Track>, track: Track) {
+        val index = playlist.indexOfFirst { it.id == track.id }
+        val prevIndex = if (index == -1) 0 else (index - 1 + playlist.size) % playlist.size
+        musicServiceController.previous(playlist, prevIndex)
+        val prevTrack = playlist.getOrNull(prevIndex)
+        if (prevTrack != null) {
+            viewModelScope.launch { playerUseCases.playTrack(prevTrack) }
         }
     }
 
@@ -118,5 +130,15 @@ class PlayerViewModel(
         viewModelScope.launch {
             playerUseCases.toggleRepeatMode()
         }
+    }
+
+    fun updateTrackPosition(position: Long) {
+        (playerUseCases as? PlayerRepositoryImpl)?.updateTrackPosition(position)
+    }
+
+    fun playFromAlbum(playlist: List<Track>, track: Track, playlistName: String) {
+        setPlaylist(playlist, playlistName)
+        val index = playlist.indexOfFirst { it.id == track.id }
+        musicServiceController.play(playlist, if (index == -1) 0 else index)
     }
 }

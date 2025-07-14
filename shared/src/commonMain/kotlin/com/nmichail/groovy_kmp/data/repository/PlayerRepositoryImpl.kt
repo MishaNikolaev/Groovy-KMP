@@ -145,6 +145,19 @@ class PlayerRepositoryImpl : PlayerRepository {
         _playerInfo.update { it.copy(repeatMode = nextMode) }
     }
 
+    fun updateTrackPosition(position: Long) {
+        _playerInfo.update {
+            it.copy(progress = it.progress.copy(currentPosition = position))
+        }
+    }
+
+    suspend fun playByIndex(index: Int) {
+        val playlist = _playerInfo.value.playlist
+        if (playlist.isNotEmpty() && index in playlist.indices) {
+            play(playlist[index])
+        }
+    }
+
     private fun startProgressTracking() {
         stopProgressTracking()
         progressJob = scope.launch {

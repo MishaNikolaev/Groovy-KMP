@@ -1,4 +1,4 @@
-package com.nmichail.groovy_kmp.android
+package com.nmichail.groovy_kmp.platform.service
 
 import android.app.*
 import android.content.Intent
@@ -28,6 +28,8 @@ import com.nmichail.groovy_kmp.domain.models.PlaybackProgress
 import com.nmichail.groovy_kmp.domain.models.PlayerInfo
 import kotlinx.coroutines.Job
 import androidx.media.session.MediaButtonReceiver
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 class MusicPlayerService : Service() {
     
@@ -42,10 +44,12 @@ class MusicPlayerService : Service() {
     private lateinit var mediaSession: MediaSessionCompat
     private lateinit var playerViewModel: PlayerViewModel
     private var currentTrack: Track? = null
+    private var currentPlaylist: List<Track>? = null
     private var artLoadingJob: Job? = null
     private val albumArtCache = mutableMapOf<String, Bitmap>()
     
     private var mediaPlayer: MediaPlayer? = null
+    private var progressJob: Job? = null
     
     private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
         // ... existing code ...
@@ -58,6 +62,7 @@ class MusicPlayerService : Service() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
         super.onCreate()
+        println("[MusicPlayerService] onCreate called")
         playerViewModel = getKoin().get()
         createNotificationChannel()
         setupMediaSession()
@@ -65,29 +70,93 @@ class MusicPlayerService : Service() {
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        println("[MusicPlayerService] onStartCommand: action=${intent?.action}, extras=${intent?.extras}")
         MediaButtonReceiver.handleIntent(mediaSession, intent)
 
+        val playlistJson = intent?.getStringExtra("playlist_json")
+        val index = intent?.getIntExtra("track_index", 0) ?: 0
+        println("[MusicPlayerService] playlistJson: $playlistJson")
+        println("[MusicPlayerService] index: $index")
+        val playlist = try {
+            if (playlistJson != null) Json.decodeFromString<List<Track>>(playlistJson) else null
+        } catch (e: Exception) {
+            println("[MusicPlayerService] EXCEPTION while decoding playlist: ${e.message}")
+            null
+        }
+        println("[MusicPlayerService] playlist: $playlist")
+
         when (intent?.action) {
-            "START_PLAYING" -> {
-                val trackTitle = intent.getStringExtra("track_title") ?: "Unknown Track"
-                val trackArtist = intent.getStringExtra("track_artist") ?: "Unknown Artist"
-                val trackStoragePath = intent.getStringExtra("track_storage_path") ?: ""
-                val trackCoverUrl = intent.getStringExtra("track_cover_url")
-                
-                val track = Track(
-                    id = null,
-                    title = trackTitle,
-                    artist = trackArtist,
-                    artistId = null,
-                    albumId = null,
-                    coverUrl = trackCoverUrl,
-                    duration = null,
-                    storagePath = trackStoragePath
-                )
-                
-                currentTrack = track
-                startAudioPlayback(track)
-                println("Started playing track from service: ${track.title}")
+            "PLAY" -> {
+                if (playlist != null) {
+                    currentPlaylist = playlist
+                    val track = playlist.getOrNull(index)
+                    println("[MusicPlayerService] track: $track")
+                    if (track != null) {
+                        if (currentTrack?.id == track.id && mediaPlayer?.isPlaying == true) {
+                            println("[MusicPlayerService] Already playing this track, ignoring PLAY command")
+                            return START_NOT_STICKY
+                        }
+                        currentTrack = track
+                        println("[MusicPlayerService] >>> Calling startAudioPlayback for: ${track.title}")
+                        startAudioPlayback(track)
+                    } else {
+                        println("[MusicPlayerService] >>> Track is null at index $index in playlist!")
+                    }
+                } else {
+                    println("[MusicPlayerService] >>> Playlist is null!")
+                }
+            }
+            "PAUSE" -> {
+                if (playlist != null) {
+                    currentPlaylist = playlist
+                    val track = playlist.getOrNull(index)
+                    if (track != null) currentTrack = track
+                }
+                pauseAudioPlayback()
+                println("Paused from service")
+            }
+            "RESUME" -> {
+                if (playlist != null) {
+                    currentPlaylist = playlist
+                    val track = playlist.getOrNull(index)
+                    if (track != null) currentTrack = track
+                }
+                resumeAudioPlayback()
+                println("Resumed from service")
+            }
+            "NEXT" -> {
+                if (playlist != null) {
+                    currentPlaylist = playlist
+                    val nextIndex = (index + 1).coerceAtMost(playlist.size - 1)
+                    val nextTrack = playlist.getOrNull(nextIndex)
+                    if (nextTrack != null) {
+                        currentTrack = nextTrack
+                        startAudioPlayback(nextTrack)
+                    }
+                }
+                println("Next track from service")
+            }
+            "PREVIOUS" -> {
+                if (playlist != null) {
+                    currentPlaylist = playlist
+                    val prevIndex = (index - 1).coerceAtLeast(0)
+                    val prevTrack = playlist.getOrNull(prevIndex)
+                    if (prevTrack != null) {
+                        currentTrack = prevTrack
+                        startAudioPlayback(prevTrack)
+                    }
+                }
+                println("Previous track from service")
+            }
+            "SEEK_TO" -> {
+                if (playlist != null) {
+                    currentPlaylist = playlist
+                    val track = playlist.getOrNull(index)
+                    if (track != null) currentTrack = track
+                }
+                val position = intent.getLongExtra("seek_position", 0L)
+                seekAudioPlayback(position)
+                println("Seeked to position: $position")
             }
             "CLEAR_CACHE" -> {
                 albumArtCache.clear()
@@ -131,6 +200,7 @@ class MusicPlayerService : Service() {
             playerViewModel.playerInfo.collectLatest { playerInfo ->
                 val track = playerInfo.track
                 val coverUrl = track?.coverUrl
+                println("[MusicPlayerService] observePlayerState: track=${track?.title}, state=${playerInfo.state}")
                 if (track == null || coverUrl == null) {
                     stopForeground(true)
                     artLoadingJob?.cancel()
@@ -155,13 +225,6 @@ class MusicPlayerService : Service() {
                 updateNotification(playerInfo)
                 updateMediaSessionState(playerInfo)
 
-                // Sync MediaPlayer state
-                when (playerInfo.state) {
-                    is PlayerState.Playing -> mediaPlayer?.let { if (!it.isPlaying) it.start() }
-                    is PlayerState.Paused -> mediaPlayer?.let { if (it.isPlaying) it.pause() }
-                    is PlayerState.Stopped -> cleanupMediaPlayer()
-                    else -> Unit
-                }
             }
         }
     }
@@ -169,6 +232,7 @@ class MusicPlayerService : Service() {
     private fun updateNotification(playerInfo: PlayerInfo?) {
         val track = playerInfo?.track
         val coverUrl = track?.coverUrl
+        println("[MusicPlayerService] updateNotification: track=${track?.title}, isPlaying=${playerInfo?.state is PlayerState.Playing}")
         if (track == null || coverUrl == null) {
             stopForeground(true)
             return
@@ -213,10 +277,8 @@ class MusicPlayerService : Service() {
     }
     
     private fun createNotification(track: Track, isPlaying: Boolean, albumArt: Bitmap?): Notification {
-        // Create intent for opening the app
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+        val intent = launchIntent ?: Intent()
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -225,7 +287,7 @@ class MusicPlayerService : Service() {
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(track.title ?: "Unknown Track")
             .setContentText(track.artist ?: "Unknown Artist")
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(applicationInfo.icon)
             .setContentIntent(pendingIntent)
             .setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
@@ -286,44 +348,54 @@ class MusicPlayerService : Service() {
         mediaPlayer = null
     }
     
+    private fun startProgressUpdates() {
+        progressJob?.cancel()
+        progressJob = serviceScope.launch {
+            while (mediaPlayer != null && mediaPlayer!!.isPlaying) {
+                val pos = mediaPlayer?.currentPosition?.toLong() ?: 0L
+                playerViewModel.updateTrackPosition(pos)
+                kotlinx.coroutines.delay(1000)
+            }
+        }
+    }
+
+    private fun stopProgressUpdates() {
+        progressJob?.cancel()
+        progressJob = null
+    }
+
     private fun startAudioPlayback(track: Track) {
+        println("[MusicPlayerService] >>> ENTERED startAudioPlayback for: ${track.title}")
+        val storagePath = track.storagePath ?: return
         try {
-            println("Starting audio playback for track: ${track.title}")
-            println("Audio URL: ${track.storagePath}")
-            
-            cleanupMediaPlayer() // Stop any existing playback without changing ViewModel state
-            
+            println("[MusicPlayerService] Before setDataSource: $storagePath")
+            cleanupMediaPlayer()
             mediaPlayer = MediaPlayer().apply {
-                setDataSource(track.storagePath)
+                setDataSource(storagePath)
+                println("[MusicPlayerService] After setDataSource")
                 prepareAsync()
                 setOnPreparedListener { mp ->
-                    println("MediaPlayer prepared successfully for: ${track.title}")
-
+                    println("[MusicPlayerService] MediaPlayer prepared successfully for: ${track.title}")
                     serviceScope.launch {
                         val actualDuration = mp.duration.toLong()
-                        if (actualDuration > 0) {
-                            println("Actual track duration: ${actualDuration}ms for track '${track.title}'")
-                            playerViewModel.updateTrackDuration(actualDuration)
-                        } else {
-                            println("!!! Failed to get valid duration from MediaPlayer for track '${track.title}'. Received: ${actualDuration}ms")
-                        }
-
+                        println("[MusicPlayerService] Actual duration: $actualDuration")
                         mp.start()
-                        println("Started audio playback for: ${track.title}")
-
-                        playerViewModel.resume()
+                        println("[MusicPlayerService] Started audio playback for: ${track.title}")
+                        startProgressUpdates()
                     }
                 }
                 setOnCompletionListener { mp ->
-                    println("Audio playback completed for: ${track.title}")
+                    println("[MusicPlayerService] Audio playback completed for: ${track.title}")
+                    stopProgressUpdates()
                 }
                 setOnErrorListener { mp, what, extra ->
-                    println("Audio playback error for ${track.title}: what=$what, extra=$extra")
+                    println("[MusicPlayerService] Audio playback error for ${track.title}: what=$what, extra=$extra")
+                    stopProgressUpdates()
                     true
                 }
             }
         } catch (e: Exception) {
-            println("Failed to start audio playback: ${e.message}")
+            println("[MusicPlayerService] EXCEPTION in startAudioPlayback: ${e.message}")
             e.printStackTrace()
         }
     }
@@ -335,7 +407,7 @@ class MusicPlayerService : Service() {
                 println("Paused audio playback")
             }
         }
-        serviceScope.launch { playerViewModel.pause() }
+        stopProgressUpdates()
     }
     
     private fun resumeAudioPlayback() {
@@ -345,15 +417,40 @@ class MusicPlayerService : Service() {
                 println("Resumed audio playback")
             }
         }
-        serviceScope.launch { playerViewModel.resume() }
+        startProgressUpdates()
     }
     
     private fun stopAudioPlayback() {
         cleanupMediaPlayer()
+        stopProgressUpdates()
         serviceScope.launch { playerViewModel.stop() }
     }
     
     private fun seekAudioPlayback(position: Long) {
         mediaPlayer?.seekTo(position.toInt())
+    }
+
+    private fun playNextTrack() {
+        val playlist = currentPlaylist
+        val current = currentTrack
+        if (playlist != null && current != null) {
+            val idx = playlist.indexOfFirst { it.id == current.id }
+            val next = if (idx != -1 && idx + 1 < playlist.size) playlist[idx + 1] else null
+            if (next != null) {
+                startAudioPlayback(next)
+            }
+        }
+    }
+
+    private fun playPreviousTrack() {
+        val playlist = currentPlaylist
+        val current = currentTrack
+        if (playlist != null && current != null) {
+            val idx = playlist.indexOfFirst { it.id == current.id }
+            val prev = if (idx > 0) playlist[idx - 1] else null
+            if (prev != null) {
+                startAudioPlayback(prev)
+            }
+        }
     }
 } 

@@ -50,7 +50,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     debugImplementation(libs.compose.ui.tooling)
     // Koin Android
-    implementation("io.insert-koin:koin-android:3.5.3")
+    implementation("io.insert-koin:koin-android:3.5.0")
     // Ktor OkHttp engine
     implementation("io.ktor:ktor-client-okhttp:2.3.7")
     implementation("androidx.room:room-runtime:2.6.1")
