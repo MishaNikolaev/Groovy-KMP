@@ -1,7 +1,9 @@
 package com.nmichail.groovy_kmp.presentation.screen.player
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -23,7 +25,12 @@ import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.mp.KoinPlatform.getKoin
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
+import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.generateAlbumColor
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PlayerBar(
     currentTrack: Track?,
@@ -34,9 +41,15 @@ fun PlayerBar(
     onNextClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onTrackProgressChanged: (Float) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = Color.White
 ) {
     if (currentTrack == null) return
+
+    val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
+    val albumColor = remember(currentTrack?.coverUrl) {
+        generateAlbumColor(currentTrack?.coverUrl)
+    }
 
     var isDragging by remember { mutableStateOf(false) }
     var dragProgress by remember { mutableStateOf(progress) }
@@ -58,7 +71,7 @@ fun PlayerBar(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(albumColor)
         ) {
             Slider(
                 value = if (isDragging) dragProgress else progress,
@@ -74,12 +87,11 @@ fun PlayerBar(
                     .fillMaxWidth()
                     .height(8.dp),
                 colors = SliderDefaults.colors(
-                    thumbColor = Color(0xFFE94057),
-                    activeTrackColor = Color(0xFFE94057),
-                    inactiveTrackColor = Color.LightGray
+                    thumbColor = Color.White,
+                    activeTrackColor = Color.White,
+                    inactiveTrackColor = Color(0x33FFFFFF)
                 )
             )
-            
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -90,17 +102,21 @@ fun PlayerBar(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color.LightGray)
+                        .background(Color.White.copy(alpha = 0.1f))
                 ) {
                     PlatformImage(
                         url = currentTrack.coverUrl,
                         contentDescription = currentTrack.title,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        onColorExtracted = { color ->
+                            currentTrack.albumId?.let {
+                                println("[PlayerBar] setAlbumColor for albumId=$it color=$color")
+                                albumViewModel.setAlbumColor(it, color)
+                            }
+                        }
                     )
                 }
-                
                 Spacer(modifier = Modifier.width(12.dp))
-                
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -108,28 +124,26 @@ fun PlayerBar(
                         text = currentTrack.title ?: "",
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Medium,
-                            fontSize = 16.sp
+                            fontSize = 14.sp,
+                            color = Color.White,
+                            fontFamily = AlbumFontFamily
                         ),
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.basicMarquee()
                     )
                     Text(
                         text = currentTrack.artist ?: "",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = Color.Gray,
-                            fontSize = 14.sp
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 12.sp,
+                            fontFamily = AlbumFontFamily
                         ),
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.basicMarquee()
                     )
                 }
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
                     IconButton(
                         onClick = onPreviousClick,
                         modifier = Modifier.size(40.dp)
@@ -141,15 +155,9 @@ fun PlayerBar(
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                    
                     IconButton(
                         onClick = onPlayPauseClick,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(
-                                color = Color(0xFFE94057),
-                                shape = CircleShape
-                            )
+                    modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = if (playerState is PlayerState.Playing) {
@@ -158,11 +166,10 @@ fun PlayerBar(
                                 Icons.Filled.PlayArrow
                             },
                             contentDescription = if (playerState is PlayerState.Playing) "Pause" else "Play",
-                            tint = Color.White,
+                        tint = Color.Black,
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                    
                     IconButton(
                         onClick = onNextClick,
                         modifier = Modifier.size(40.dp)
@@ -173,7 +180,6 @@ fun PlayerBar(
                             tint = Color.Black,
                             modifier = Modifier.size(24.dp)
                         )
-                    }
                 }
             }
         }

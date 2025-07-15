@@ -50,8 +50,44 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.alpha
 import com.nmichail.groovy_kmp.domain.models.Track
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.style.TextAlign
+
+// Вынести генерацию albumColor в функцию
+fun generateAlbumColor(url: String?): Color {
+    val hash = (url ?: "").hashCode()
+    val hue = (hash % 360).toFloat()
+    val saturation = when {
+        hash % 3 == 0 -> 0.4f
+        hash % 3 == 1 -> 0.25f
+        else -> 0.15f
+    }
+    val lightness = when {
+        hash % 4 == 0 -> 0.35f
+        hash % 4 == 1 -> 0.45f
+        hash % 4 == 2 -> 0.55f
+        else -> 0.4f
+    }
+    val c = (1 - kotlin.math.abs(2 * lightness - 1)) * saturation
+    val x = c * (1 - kotlin.math.abs((hue / 60) % 2 - 1))
+    val m = lightness - c / 2
+    val (r, g, b) = when {
+        hue < 60 -> Triple(c, x, 0f)
+        hue < 120 -> Triple(x, c, 0f)
+        hue < 180 -> Triple(0f, c, x)
+        hue < 240 -> Triple(0f, x, c)
+        hue < 300 -> Triple(x, 0f, c)
+        else -> Triple(c, 0f, x)
+    }
+    return Color(
+        red = (r + m).coerceIn(0f, 1f),
+        green = (g + m).coerceIn(0f, 1f),
+        blue = (b + m).coerceIn(0f, 1f),
+        alpha = 0.7f
+    )
+}
 
 @Composable
 fun AlbumScreen(
@@ -72,7 +108,25 @@ fun AlbumScreen(
     val backgroundColor = albumViewModel.getBackgroundColor()
     val coroutineScope = rememberCoroutineScope()
 
-    val currentAlbum = albumWithTracks.album
+    // Вернуть кастомный цвет для AlbumScreen
+    val albumColor = remember(albumWithTracks.album.coverUrl) {
+        generateAlbumColor(albumWithTracks.album.coverUrl)
+    }
+
+    androidx.compose.runtime.key(albumWithTracks.album.id) {
+        if (albumColor == Color(0xFFAAA287)) {
+            PlatformImage(
+                url = albumWithTracks.album.coverUrl,
+                contentDescription = null,
+                modifier = Modifier.size(1.dp).alpha(0f),
+                onColorExtracted = { color ->
+                    albumWithTracks.album.id?.let {
+                        albumViewModel.setAlbumColor(it, color)
+                    }
+                }
+            )
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -84,7 +138,7 @@ fun AlbumScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(450.dp)
-                    .background(backgroundColor)
+                    .background(albumColor)
             ) {
                 IconButton(
                     onClick = onBack,
@@ -108,15 +162,22 @@ fun AlbumScreen(
                             .background(Color.LightGray)
                     ) {
                         PlatformImage(
-                            url = albumWithTracks.album.coverUrl, 
-                            contentDescription = albumWithTracks.album.title
+                            url = albumWithTracks.album.coverUrl,
+                            contentDescription = albumWithTracks.album.title,
+                            modifier = Modifier.fillMaxSize(),
+                            onColorExtracted = { color ->
+                                albumWithTracks.album.id?.let {
+                                    println("[AlbumScreen] setAlbumColor for albumId=$it color=$color")
+                                    albumViewModel.setAlbumColor(it, color)
+                                }
+                            }
                         )
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = albumWithTracks.album.title ?: "",
                         style = MaterialTheme.typography.headlineMedium.copy(
-                            fontSize = 28.sp,
+                            fontSize = 22.sp, // чуть больше
                             fontWeight = FontWeight.Bold,
                             fontFamily = AlbumFontFamily,
                             color = Color.White
@@ -142,7 +203,6 @@ fun AlbumScreen(
                                 modifier = Modifier
                                     .size(32.dp)
                                     .clip(CircleShape)
-                                    .background(Color.LightGray)
                             ) {
                                 PlatformImage(
                                     url = albumWithTracks.album.artistPhotoUrl,
@@ -155,7 +215,7 @@ fun AlbumScreen(
                                 text = authorYear,
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     fontWeight = FontWeight.Normal,
-                                    fontSize = 16.sp,
+                                    fontSize = 14.sp, // уменьшен размер
                                     color = Color.White.copy(alpha = 0.7f),
                                     fontFamily = AlbumFontFamily
                                 )
@@ -246,26 +306,30 @@ fun TrackRow(track: com.nmichail.groovy_kmp.domain.models.Track, isPlaying: Bool
             .clickable(onClick = onClick)
             .padding(vertical = 12.dp, horizontal = 24.dp)
     ) {
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = track.title ?: "",
-                        style = MaterialTheme.typography.bodyLarge.copy(
+        Box(Modifier.width(32.dp), contentAlignment = Alignment.Center) {
+            if (isPlaying) {
+                AnimatedPlayingIndicator()
+            }
+        }
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = track.title ?: "",
+                style = MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-                    )
-                    Text(
-                        text = track.artist ?: "",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color.Gray,
-                    fontSize = 14.sp
+                    fontSize = 16.sp,
+                    fontFamily = AlbumFontFamily
                 )
             )
-        }
-        if (isPlaying) {
-            AnimatedPlayingIndicator()
+            Text(
+                text = track.artist ?: "",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.Gray,
+                    fontSize = 13.sp,
+                    fontFamily = AlbumFontFamily
+                )
+            )
         }
     }
 }

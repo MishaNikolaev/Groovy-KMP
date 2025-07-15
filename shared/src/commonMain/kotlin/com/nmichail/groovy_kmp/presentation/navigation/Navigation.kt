@@ -17,6 +17,7 @@ import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
 import com.nmichail.groovy_kmp.data.manager.SessionManager
 import com.nmichail.groovy_kmp.data.local.model.UserSession
 import com.nmichail.groovy_kmp.domain.models.PlayerState
+import com.nmichail.groovy_kmp.presentation.screen.player.FullPlayerScreen
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerBar
 import moe.tlaster.precompose.navigation.NavHost
 import moe.tlaster.precompose.navigation.rememberNavigator
@@ -114,46 +115,108 @@ private fun MainSection(
     val progress = if (playerInfo.progress.totalDuration > 0) {
         playerInfo.progress.currentPosition.toFloat() / playerInfo.progress.totalDuration
     } else 0f
+    var showFullPlayer by remember { mutableStateOf(false) }
+    var lastAlbumScreen: (() -> Unit)? = null
+    val albumViewModel = remember { getKoin().get<com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel>() }
+    val backgroundColor = albumViewModel.getBackgroundColor()
 
-    Scaffold(
-        bottomBar = {
-            Column {
-                if (currentTrack != null) {
-                    PlayerBar(
-                        currentTrack = currentTrack,
-                        playerState = playerState,
-                        progress = progress,
-                        onPlayerBarClick = { /* TODO: открыть полный плеер */ },
-                        onPlayPauseClick = {
-                            if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack!!) else playerViewModel.resume(playerInfo.playlist, currentTrack!!)
-                        },
-                        onNextClick = { playerViewModel.skipToNext(playerInfo.playlist, currentTrack!!) },
-                        onPreviousClick = { playerViewModel.skipToPrevious(playerInfo.playlist, currentTrack!!) },
-                        onTrackProgressChanged = { newProgress ->
-                            val duration = playerInfo.progress.totalDuration
-                            if (duration > 0) {
-                                playerViewModel.onTrackProgressChanged(newProgress)
-                            }
-                        }
+    // Добавлено: обновлять цвет альбома при смене currentTrack
+    LaunchedEffect(currentTrack?.albumId) {
+        currentTrack?.albumId?.let { albumId ->
+            albumViewModel.load(albumId)
+        }
+    }
+
+    if (showFullPlayer && currentTrack != null) {
+        FullPlayerScreen(
+            currentTrack = currentTrack,
+            playerState = playerState,
+            progress = progress,
+            onBackClick = { showFullPlayer = false },
+            onBackToAlbumClick = lastAlbumScreen,
+            onPlayPauseClick = {
+                if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack) else playerViewModel.resume(playerInfo.playlist, currentTrack)
+            },
+            onNextClick = {
+                val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack.id }
+                val nextIndex = if (index == -1) 0 else (index + 1) % playerInfo.playlist.size
+                val nextTrack = playerInfo.playlist.getOrNull(nextIndex)
+                if (nextTrack != null) playerViewModel.play(playerInfo.playlist, nextTrack)
+            },
+            onPreviousClick = {
+                val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack.id }
+                val prevIndex = if (index == -1) 0 else (index - 1 + playerInfo.playlist.size) % playerInfo.playlist.size
+                val prevTrack = playerInfo.playlist.getOrNull(prevIndex)
+                if (prevTrack != null) playerViewModel.play(playerInfo.playlist, prevTrack)
+            },
+            onSeek = { newProgress ->
+                val duration = playerInfo.progress.totalDuration
+                if (duration > 0) {
+                    val newPosition = (duration * newProgress).toLong()
+                    playerViewModel.onTrackProgressChanged(newProgress)
+                }
+            },
+            onShuffleClick = { playerViewModel.toggleShuffle() },
+            onRepeatClick = { playerViewModel.toggleRepeatMode() },
+            isShuffleEnabled = playerInfo.isShuffleEnabled,
+            repeatMode = playerInfo.repeatMode,
+            currentPosition = playerInfo.progress.currentPosition,
+            duration = playerInfo.progress.totalDuration,
+            backgroundColor = backgroundColor
+        )
+    } else {
+        Scaffold(
+            bottomBar = {
+                Column {
+                    if (currentTrack != null) {
+                        PlayerBar(
+                            currentTrack = currentTrack,
+                            playerState = playerState,
+                            progress = progress,
+                            onPlayerBarClick = { showFullPlayer = true },
+                            onPlayPauseClick = {
+                                if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack!!) else playerViewModel.resume(playerInfo.playlist, currentTrack!!)
+                            },
+                            onNextClick = {
+                                val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack?.id }
+                                val nextIndex = if (index == -1) 0 else (index + 1) % playerInfo.playlist.size
+                                val nextTrack = playerInfo.playlist.getOrNull(nextIndex)
+                                if (nextTrack != null) playerViewModel.play(playerInfo.playlist, nextTrack)
+                            },
+                            onPreviousClick = {
+                                val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack?.id }
+                                val prevIndex = if (index == -1) 0 else (index - 1 + playerInfo.playlist.size) % playerInfo.playlist.size
+                                val prevTrack = playerInfo.playlist.getOrNull(prevIndex)
+                                if (prevTrack != null) playerViewModel.play(playerInfo.playlist, prevTrack)
+                            },
+                            onTrackProgressChanged = { newProgress ->
+                                val duration = playerInfo.progress.totalDuration
+                                if (duration > 0) {
+                                    val newPosition = (duration * newProgress).toLong()
+                                    playerViewModel.onTrackProgressChanged(newProgress)
+                                }
+                            },
+                            backgroundColor = backgroundColor
+                        )
+                    }
+                    BottomBar(
+                        currentRoute = selectedTab.route,
+                        onNavigate = onTabSelected
                     )
                 }
-                BottomBar(
-                    currentRoute = selectedTab.route,
-                    onNavigate = onTabSelected
-                )
             }
-        }
-    ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
-            when (selectedTab) {
-                Screen.MainSection.Home -> HomeScreen()
-                Screen.MainSection.Search -> SearchScreen()
-                Screen.MainSection.Favourite -> FavouriteScreen()
-                Screen.MainSection.Profile -> ProfileScreen(
-                    email = userSession?.email,
-                    username = userSession?.username,
-                    onLogout = onLogout
-                )
+        ) { paddingValues ->
+            Box(modifier = Modifier.padding(paddingValues)) {
+                when (selectedTab) {
+                    Screen.MainSection.Home -> HomeScreen()
+                    Screen.MainSection.Search -> SearchScreen()
+                    Screen.MainSection.Favourite -> FavouriteScreen()
+                    Screen.MainSection.Profile -> ProfileScreen(
+                        email = userSession?.email,
+                        username = userSession?.username,
+                        onLogout = onLogout
+                    )
+                }
             }
         }
     }

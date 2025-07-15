@@ -19,6 +19,7 @@ class AlbumViewModel(
     
     private var lastLoadedAlbumId: String? = null
     private var albumBackgroundColor: Color = Color(0xFFAAA287)
+    private val albumColors = mutableMapOf<String, Color>()
 
     fun load(albumId: String) {
         if (lastLoadedAlbumId == albumId && _state.value != null) {
@@ -49,6 +50,30 @@ class AlbumViewModel(
     }
     
     fun getBackgroundColor(): Color = albumBackgroundColor
+    
+    fun setBackgroundColor(color: Color) {
+        albumBackgroundColor = color
+    }
+
+    fun setAlbumColor(albumId: String, color: Color) {
+        if (color == Color(0xFFAAA287)) {
+            println("[AlbumViewModel] setAlbumColor: albumId=$albumId, игнорируем дефолтный цвет")
+            return
+        }
+        albumColors[albumId] = color
+        println("[AlbumViewModel] setAlbumColor: albumId=$albumId, color=$color (saved)")
+    }
+
+    fun getAlbumColor(albumId: String?): Color {
+        if (albumId == null) return Color(0xFFAAA287)
+        val existing = albumColors[albumId]
+        if (existing != null) {
+            println("[AlbumViewModel] getAlbumColor: albumId=$albumId, color=$existing (cached)")
+            return existing
+        }
+        println("[AlbumViewModel] getAlbumColor: albumId=$albumId, color=DEFAULT (not found in cache)")
+        return Color(0xFFAAA287)
+    }
     
     private fun generateColorFromUrl(url: String?): Color {
         if (url == null) return Color(0xFFAAA287)

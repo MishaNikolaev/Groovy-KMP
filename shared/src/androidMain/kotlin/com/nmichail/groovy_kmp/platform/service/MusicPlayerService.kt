@@ -387,6 +387,7 @@ class MusicPlayerService : Service() {
                 setOnCompletionListener { mp ->
                     println("[MusicPlayerService] Audio playback completed for: ${track.title}")
                     stopProgressUpdates()
+                    playNextTrack()
                 }
                 setOnErrorListener { mp, what, extra ->
                     println("[MusicPlayerService] Audio playback error for ${track.title}: what=$what, extra=$extra")

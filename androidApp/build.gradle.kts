@@ -61,4 +61,6 @@ dependencies {
     // MediaSession for music controls
     implementation("androidx.media:media:1.7.0")
     implementation("androidx.media3:media3-session:1.2.1")
+
+    implementation("androidx.palette:palette-ktx:1.0.0")
 }

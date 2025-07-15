@@ -1,7 +1,10 @@
 package com.nmichail.groovy_kmp.presentation.screen.player
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,14 +22,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nmichail.groovy_kmp.domain.models.*
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
+import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 import kotlinx.coroutines.delay
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.style.TextOverflow
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.generateAlbumColor
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FullPlayerScreen(
     currentTrack: Track?,
     playerState: PlayerState,
     progress: Float,
     onBackClick: () -> Unit,
+    onBackToAlbumClick: (() -> Unit)? = null,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
     onPreviousClick: () -> Unit,
@@ -36,7 +45,8 @@ fun FullPlayerScreen(
     isShuffleEnabled: Boolean = false,
     repeatMode: RepeatMode = RepeatMode.None,
     currentPosition: Long = 0L,
-    duration: Long = 0L
+    duration: Long = 0L,
+    backgroundColor: Color = Color.White
 ) {
     if (currentTrack == null) return
 
@@ -45,10 +55,18 @@ fun FullPlayerScreen(
         animationSpec = androidx.compose.animation.core.tween(100)
     )
 
+    val albumViewModel = remember { org.koin.mp.KoinPlatform.getKoin().get<com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel>() }
+    val albumColor = remember(currentTrack?.coverUrl) {
+        generateAlbumColor(currentTrack?.coverUrl)
+    }
+    val albumState by albumViewModel.state.collectAsState()
+    val currentAlbum = if (albumState?.album?.id == currentTrack.albumId) albumState?.album else null
+    val artistPhotoUrl = currentAlbum?.artistPhotoUrl
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(albumColor)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -57,71 +75,97 @@ fun FullPlayerScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBackClick) {
+            IconButton(onClick = { onBackToAlbumClick?.invoke() ?: onBackClick() }) {
                 Icon(
                     imageVector = Icons.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = Color.Black
+                    tint = Color.White
                 )
             }
-            
             Text(
                 text = "Now Playing",
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
                 )
             )
-            
             IconButton(onClick = { /* TODO: More options */ }) {
                 Icon(
                     imageVector = Icons.Filled.MoreVert,
                     contentDescription = "More",
-                    tint = Color.Black
+                    tint = Color.White
                 )
             }
         }
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
+        Spacer(modifier = Modifier.height(16.dp))
         Box(
             modifier = Modifier
-                .size(300.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .size(220.dp)
+                .clip(RoundedCornerShape(18.dp))
                 .background(Color.LightGray)
         ) {
             PlatformImage(
                 url = currentTrack.coverUrl,
                 contentDescription = currentTrack.title,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                onColorExtracted = { color ->
+                    currentTrack.albumId?.let {
+                        println("[FullPlayerScreen] setAlbumColor for albumId=$it color=$color")
+                        albumViewModel.setAlbumColor(it, color)
+                    }
+                }
             )
         }
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
+        Spacer(modifier = Modifier.height(20.dp))
         Text(
             text = currentTrack.title ?: "",
             style = MaterialTheme.typography.headlineSmall.copy(
                 fontWeight = FontWeight.Bold,
-                fontSize = 24.sp
+                fontSize = 26.sp,
+                color = Color.White,
+                fontFamily = AlbumFontFamily
             ),
             textAlign = TextAlign.Center,
-            maxLines = 2
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.basicMarquee()
         )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = currentTrack.artist ?: "",
-            style = MaterialTheme.typography.bodyLarge.copy(
-                color = Color.Gray,
-                fontSize = 18.sp
-            ),
-            textAlign = TextAlign.Center,
-            maxLines = 1
-        )
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 48.dp)
+                .clickable(enabled = !currentTrack.artist.isNullOrBlank()) { /* TODO: обработка клика по артисту */ },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+            ) {
+                PlatformImage(
+                    url = artistPhotoUrl,
+                    contentDescription = currentTrack.artist,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = currentTrack.artist ?: "",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 16.sp,
+                    fontFamily = AlbumFontFamily
+                ),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.basicMarquee()
+            )
+        }
+        Spacer(modifier = Modifier.height(22.dp))
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -130,12 +174,11 @@ fun FullPlayerScreen(
                 onValueChange = onSeek,
                 modifier = Modifier.fillMaxWidth(),
                 colors = SliderDefaults.colors(
-                    thumbColor = Color(0xFFE94057),
-                    activeTrackColor = Color(0xFFE94057),
-                    inactiveTrackColor = Color.LightGray
+                    thumbColor = Color.White,
+                    activeTrackColor = Color.White,
+                    inactiveTrackColor = Color(0x33FFFFFF)
                 )
             )
-            
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -143,49 +186,40 @@ fun FullPlayerScreen(
                 Text(
                     text = formatTime(currentPosition),
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.Gray
+                        color = Color.White
                     )
                 )
                 Text(
                     text = formatTime(duration),
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.Gray
+                        color = Color.White
                     )
                 )
             }
         }
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
+        Spacer(modifier = Modifier.height(24.dp))
+        // Первый ряд: Mute, Previous, Play, Next, Like
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = onShuffleClick,
-                modifier = Modifier.size(48.dp)
-            ) {
+            IconButton(onClick = { /* TODO: Mute */ }, modifier = Modifier.size(48.dp)) {
                 Icon(
-                    imageVector = Icons.Filled.Shuffle,
-                    contentDescription = "Shuffle",
-                    tint = if (isShuffleEnabled) Color(0xFFE94057) else Color.Gray,
+                    imageVector = Icons.Filled.VolumeOff,
+                    contentDescription = "Mute",
+                    tint = Color.White,
                     modifier = Modifier.size(24.dp)
                 )
             }
-            
-            IconButton(
-                onClick = onPreviousClick,
-                modifier = Modifier.size(56.dp)
-            ) {
+            IconButton(onClick = onPreviousClick, modifier = Modifier.size(56.dp)) {
                 Icon(
                     imageVector = Icons.Filled.SkipPrevious,
                     contentDescription = "Previous",
-                    tint = Color.Black,
+                    tint = Color.White,
                     modifier = Modifier.size(32.dp)
                 )
             }
-            
             IconButton(
                 onClick = onPlayPauseClick,
                 modifier = Modifier
@@ -206,25 +240,31 @@ fun FullPlayerScreen(
                     modifier = Modifier.size(40.dp)
                 )
             }
-            
-            // Next button
-            IconButton(
-                onClick = onNextClick,
-                modifier = Modifier.size(56.dp)
-            ) {
+            IconButton(onClick = onNextClick, modifier = Modifier.size(56.dp)) {
                 Icon(
                     imageVector = Icons.Filled.SkipNext,
                     contentDescription = "Next",
-                    tint = Color.Black,
+                    tint = Color.White,
                     modifier = Modifier.size(32.dp)
                 )
             }
-            
-            // Repeat button
-            IconButton(
-                onClick = onRepeatClick,
-                modifier = Modifier.size(48.dp)
-            ) {
+            IconButton(onClick = { /* TODO: Like */ }, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    imageVector = Icons.Filled.FavoriteBorder,
+                    contentDescription = "Like",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        // Второй ряд: Repeat, Playlist, Lyrics, Таймер, Shuffle
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onRepeatClick, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = when (repeatMode) {
                         RepeatMode.None -> Icons.Filled.Repeat
@@ -232,47 +272,40 @@ fun FullPlayerScreen(
                         RepeatMode.All -> Icons.Filled.Repeat
                     },
                     contentDescription = "Repeat",
-                    tint = if (repeatMode != RepeatMode.None) Color(0xFFE94057) else Color.Gray,
-                    modifier = Modifier.size(24.dp)
+                    tint = if (repeatMode != RepeatMode.None) Color(0xFFE94057) else Color.White,
+                    modifier = Modifier.size(22.dp)
                 )
             }
-        }
-        
-        Spacer(modifier = Modifier.weight(1f))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            IconButton(onClick = { /* TODO: Like */ }) {
-                Icon(
-                    imageVector = Icons.Filled.FavoriteBorder,
-                    contentDescription = "Like",
-                    tint = Color.Gray
-                )
-            }
-            
-            IconButton(onClick = { /* TODO: Download */ }) {
-                Icon(
-                    imageVector = Icons.Filled.Download,
-                    contentDescription = "Download",
-                    tint = Color.Gray
-                )
-            }
-            
-            IconButton(onClick = { /* TODO: Share */ }) {
-                Icon(
-                    imageVector = Icons.Filled.Share,
-                    contentDescription = "Share",
-                    tint = Color.Gray
-                )
-            }
-            
-            IconButton(onClick = { /* TODO: Playlist */ }) {
+            IconButton(onClick = { /* TODO: Playlist */ }, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = Icons.Filled.PlaylistAdd,
                     contentDescription = "Add to Playlist",
-                    tint = Color.Gray
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            IconButton(onClick = { /* TODO: Lyrics */ }, modifier = Modifier.size(40.dp)) {
+                Icon(
+                    imageVector = Icons.Filled.LibraryMusic,
+                    contentDescription = "Lyrics",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            IconButton(onClick = { /* TODO: Timer */ }, modifier = Modifier.size(40.dp)) {
+                Icon(
+                    imageVector = Icons.Filled.Timer,
+                    contentDescription = "Timer",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            IconButton(onClick = onShuffleClick, modifier = Modifier.size(40.dp)) {
+                Icon(
+                    imageVector = Icons.Filled.Shuffle,
+                    contentDescription = "Shuffle",
+                    tint = if (isShuffleEnabled) Color(0xFFE94057) else Color.White,
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
