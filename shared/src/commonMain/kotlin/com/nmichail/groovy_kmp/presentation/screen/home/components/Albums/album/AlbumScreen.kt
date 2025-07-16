@@ -89,6 +89,7 @@ fun generateAlbumColor(url: String?): Color {
     )
 }
 
+
 @Composable
 fun AlbumScreen(
     albumWithTracks: AlbumWithTracks,
