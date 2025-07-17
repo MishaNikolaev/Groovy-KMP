@@ -17,23 +17,19 @@ class LoginViewModel(
     fun login(email: String, password: String, onResult: (Boolean) -> Unit) {
         isLoading = true
         errorMessage = null
-        println("Login attempt with email: $email")
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val response = loginUseCase(email, password)
                 lastAuthResponse = response
                 if (response.token != null) {
-                    println("Login successful. Token: ${response.token}")
                     onResult(true)
                 } else {
                     errorMessage = response.error ?: "Unknown error"
-                    println("Login failed. Error: $errorMessage")
                     onResult(false)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 errorMessage = e.message ?: "Network error"
-                println("Login failed with exception: ${e.message}")
                 onResult(false)
             } finally {
                 isLoading = false

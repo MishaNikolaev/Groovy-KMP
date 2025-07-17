@@ -206,7 +206,6 @@ fun LoginScreen(
 
                 OutlinedButton(
                     onClick = {
-                        println("Google Sign In clicked (TODO: implement)")
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -234,7 +233,6 @@ fun LoginScreen(
 
                 OutlinedButton(
                     onClick = {
-                        println("Apple Sign In clicked (TODO: implement)")
                     },
                     modifier = Modifier
                         .fillMaxWidth()

@@ -52,7 +52,6 @@ class PlayerViewModel(
     }
 
     fun setPlaylist(tracks: List<Track>, playlistName: String) {
-        println("[PlayerViewModel] setPlaylist called with playlistName: $playlistName, tracks: ${tracks.map { it.title }}")
         viewModelScope.launch {
             playerUseCases.setPlaylist(tracks, playlistName)
         }

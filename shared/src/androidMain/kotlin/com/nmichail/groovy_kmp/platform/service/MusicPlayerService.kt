@@ -32,13 +32,13 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 class MusicPlayerService : Service() {
-    
+
     companion object {
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "music_player_channel"
         private const val CHANNEL_NAME = "Music Player"
     }
-    
+
     private val binder = MusicPlayerBinder()
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private lateinit var mediaSession: MediaSessionCompat
@@ -47,63 +47,50 @@ class MusicPlayerService : Service() {
     private var currentPlaylist: List<Track>? = null
     private var artLoadingJob: Job? = null
     private val albumArtCache = mutableMapOf<String, Bitmap>()
-    
+
     private var mediaPlayer: MediaPlayer? = null
     private var progressJob: Job? = null
-    
+
     private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
         // ... existing code ...
     }
-    
+
     inner class MusicPlayerBinder : Binder() {
         fun getService(): MusicPlayerService = this@MusicPlayerService
     }
-    
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
         super.onCreate()
-        println("[MusicPlayerService] onCreate called")
         playerViewModel = getKoin().get()
         createNotificationChannel()
         setupMediaSession()
         observePlayerState()
     }
-    
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        println("[MusicPlayerService] onStartCommand: action=${intent?.action}, extras=${intent?.extras}")
         MediaButtonReceiver.handleIntent(mediaSession, intent)
 
         val playlistJson = intent?.getStringExtra("playlist_json")
         val index = intent?.getIntExtra("track_index", 0) ?: 0
-        println("[MusicPlayerService] playlistJson: $playlistJson")
-        println("[MusicPlayerService] index: $index")
         val playlist = try {
             if (playlistJson != null) Json.decodeFromString<List<Track>>(playlistJson) else null
         } catch (e: Exception) {
-            println("[MusicPlayerService] EXCEPTION while decoding playlist: ${e.message}")
             null
         }
-        println("[MusicPlayerService] playlist: $playlist")
 
         when (intent?.action) {
             "PLAY" -> {
                 if (playlist != null) {
                     currentPlaylist = playlist
                     val track = playlist.getOrNull(index)
-                    println("[MusicPlayerService] track: $track")
                     if (track != null) {
                         if (currentTrack?.id == track.id && mediaPlayer?.isPlaying == true) {
-                            println("[MusicPlayerService] Already playing this track, ignoring PLAY command")
                             return START_NOT_STICKY
                         }
                         currentTrack = track
-                        println("[MusicPlayerService] >>> Calling startAudioPlayback for: ${track.title}")
                         startAudioPlayback(track)
-                    } else {
-                        println("[MusicPlayerService] >>> Track is null at index $index in playlist!")
                     }
-                } else {
-                    println("[MusicPlayerService] >>> Playlist is null!")
                 }
             }
             "PAUSE" -> {
@@ -113,7 +100,6 @@ class MusicPlayerService : Service() {
                     if (track != null) currentTrack = track
                 }
                 pauseAudioPlayback()
-                println("Paused from service")
             }
             "RESUME" -> {
                 if (playlist != null) {
@@ -122,7 +108,6 @@ class MusicPlayerService : Service() {
                     if (track != null) currentTrack = track
                 }
                 resumeAudioPlayback()
-                println("Resumed from service")
             }
             "NEXT" -> {
                 if (playlist != null) {
@@ -134,7 +119,6 @@ class MusicPlayerService : Service() {
                         startAudioPlayback(nextTrack)
                     }
                 }
-                println("Next track from service")
             }
             "PREVIOUS" -> {
                 if (playlist != null) {
@@ -146,7 +130,6 @@ class MusicPlayerService : Service() {
                         startAudioPlayback(prevTrack)
                     }
                 }
-                println("Previous track from service")
             }
             "SEEK_TO" -> {
                 if (playlist != null) {
@@ -156,25 +139,23 @@ class MusicPlayerService : Service() {
                 }
                 val position = intent.getLongExtra("seek_position", 0L)
                 seekAudioPlayback(position)
-                println("Seeked to position: $position")
             }
             "CLEAR_CACHE" -> {
                 albumArtCache.clear()
-                println("Album art cache cleared.")
             }
         }
         return START_NOT_STICKY
     }
-    
+
     override fun onBind(intent: Intent?): IBinder = binder
-    
+
     override fun onDestroy() {
         super.onDestroy()
         stopAudioPlayback()
         mediaSession.release()
         playerViewModel.stop()
     }
-    
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
@@ -185,22 +166,21 @@ class MusicPlayerService : Service() {
             description = "Music player controls"
             setShowBadge(false)
         }
-        
+
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)
     }
-    
+
     private fun setupMediaSession() {
         mediaSession = MediaSessionCompat(this, "MusicPlayerService")
         mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
     }
-    
+
     private fun observePlayerState() {
         serviceScope.launch {
             playerViewModel.playerInfo.collectLatest { playerInfo ->
                 val track = playerInfo.track
                 val coverUrl = track?.coverUrl
-                println("[MusicPlayerService] observePlayerState: track=${track?.title}, state=${playerInfo.state}")
                 if (track == null || coverUrl == null) {
                     stopForeground(true)
                     artLoadingJob?.cancel()
@@ -217,7 +197,6 @@ class MusicPlayerService : Service() {
                                 updateNotification(playerViewModel.playerInfo.value)
                             }
                         } catch (e: Exception) {
-                            println("Failed to load album art: ${e.message}")
                         }
                     }
                 }
@@ -228,11 +207,10 @@ class MusicPlayerService : Service() {
             }
         }
     }
-    
+
     private fun updateNotification(playerInfo: PlayerInfo?) {
         val track = playerInfo?.track
         val coverUrl = track?.coverUrl
-        println("[MusicPlayerService] updateNotification: track=${track?.title}, isPlaying=${playerInfo?.state is PlayerState.Playing}")
         if (track == null || coverUrl == null) {
             stopForeground(true)
             return
@@ -242,7 +220,7 @@ class MusicPlayerService : Service() {
         val notification = createNotification(track, playerInfo.state is PlayerState.Playing, art)
         startForeground(NOTIFICATION_ID, notification)
     }
-    
+
     private fun updateMediaSessionState(playerInfo: PlayerInfo) {
         val track = playerInfo.track
         val progress = playerInfo.progress
@@ -275,7 +253,7 @@ class MusicPlayerService : Service() {
         mediaSession.setMetadata(metadataBuilder.build())
         mediaSession.isActive = true
     }
-    
+
     private fun createNotification(track: Track, isPlaying: Boolean, albumArt: Bitmap?): Notification {
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
         val intent = launchIntent ?: Intent()
@@ -283,7 +261,7 @@ class MusicPlayerService : Service() {
             this, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        
+
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(track.title ?: "Unknown Track")
             .setContentText(track.artist ?: "Unknown Artist")
@@ -333,21 +311,20 @@ class MusicPlayerService : Service() {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setLargeIcon(albumArt)
-        
+
         return notificationBuilder.build()
     }
-    
+
     private fun cleanupMediaPlayer() {
         mediaPlayer?.let { mp ->
             if (mp.isPlaying) {
                 mp.stop()
             }
             mp.release()
-            println("Cleaned up previous MediaPlayer instance")
         }
         mediaPlayer = null
     }
-    
+
     private fun startProgressUpdates() {
         progressJob?.cancel()
         progressJob = serviceScope.launch {
@@ -365,69 +342,58 @@ class MusicPlayerService : Service() {
     }
 
     private fun startAudioPlayback(track: Track) {
-        println("[MusicPlayerService] >>> ENTERED startAudioPlayback for: ${track.title}")
         val storagePath = track.storagePath ?: return
         try {
-            println("[MusicPlayerService] Before setDataSource: $storagePath")
             cleanupMediaPlayer()
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(storagePath)
-                println("[MusicPlayerService] After setDataSource")
                 prepareAsync()
                 setOnPreparedListener { mp ->
-                    println("[MusicPlayerService] MediaPlayer prepared successfully for: ${track.title}")
                     serviceScope.launch {
                         val actualDuration = mp.duration.toLong()
-                        println("[MusicPlayerService] Actual duration: $actualDuration")
                         playerViewModel.updateTrackDuration(actualDuration)
                         mp.start()
-                        println("[MusicPlayerService] Started audio playback for: ${track.title}")
                         startProgressUpdates()
                     }
                 }
                 setOnCompletionListener { mp ->
-                    println("[MusicPlayerService] Audio playback completed for: ${track.title}")
                     stopProgressUpdates()
                     playNextTrack()
                 }
                 setOnErrorListener { mp, what, extra ->
-                    println("[MusicPlayerService] Audio playback error for ${track.title}: what=$what, extra=$extra")
                     stopProgressUpdates()
                     true
                 }
             }
         } catch (e: Exception) {
-            println("[MusicPlayerService] EXCEPTION in startAudioPlayback: ${e.message}")
             e.printStackTrace()
         }
     }
-    
+
     private fun pauseAudioPlayback() {
         mediaPlayer?.let { mp ->
             if (mp.isPlaying) {
                 mp.pause()
-                println("Paused audio playback")
             }
         }
         stopProgressUpdates()
     }
-    
+
     private fun resumeAudioPlayback() {
         mediaPlayer?.let { mp ->
             if (!mp.isPlaying) {
                 mp.start()
-                println("Resumed audio playback")
             }
         }
         startProgressUpdates()
     }
-    
+
     private fun stopAudioPlayback() {
         cleanupMediaPlayer()
         stopProgressUpdates()
         serviceScope.launch { playerViewModel.stop() }
     }
-    
+
     private fun seekAudioPlayback(position: Long) {
         mediaPlayer?.seekTo(position.toInt())
         playerViewModel.updateTrackPosition(position)

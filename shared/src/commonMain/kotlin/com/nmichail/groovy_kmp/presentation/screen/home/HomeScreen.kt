@@ -105,7 +105,6 @@ fun HomeScreen() {
             AlbumsSection(
                 albums = albums.map { AlbumUi(it.title ?: "", it.artist ?: "", it.coverUrl, it.id) },
                 onAlbumClick = { albumUi ->
-                    println("Clicked album: title=${albumUi.title}, id=${albumUi.id}")
                     albumUi.id?.let { selectedAlbumId = it }
                 },
                 onViewAllClick = { showAllAlbums = true }
@@ -181,7 +180,7 @@ fun HomeScreen() {
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text("Загрузка...", style = MaterialTheme.typography.bodyLarge)
+            CircularProgressIndicator(color = Color.Black)
         }
     }
 }

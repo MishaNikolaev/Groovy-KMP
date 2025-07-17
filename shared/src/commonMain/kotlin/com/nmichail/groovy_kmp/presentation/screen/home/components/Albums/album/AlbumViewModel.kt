@@ -21,30 +21,33 @@ class AlbumViewModel(
     private var albumBackgroundColor: Color = Color(0xFFAAA287)
     private val albumColors = mutableMapOf<String, Color>()
 
+    private val albumCache = mutableMapOf<String, AlbumWithTracks>()
+
     fun load(albumId: String) {
-        if (lastLoadedAlbumId == albumId && _state.value != null) {
+        albumCache[albumId]?.let {
+            _state.value = it
+            lastLoadedAlbumId = albumId
             return
         }
-        
+
         if (lastLoadedAlbumId != albumId) {
             _state.value = null
         }
-        
+
         viewModelScope.launch {
-            println("AlbumViewModel: loading album with id=$albumId")
             try {
                 val albumWithTracks = getAlbumWithTracksUseCase(albumId)
-                println("AlbumViewModel: loaded $albumWithTracks")
                 _state.value = albumWithTracks
                 lastLoadedAlbumId = albumId
-                
+                // Сохраняем в кэш
+                if (albumWithTracks != null) {
+                    albumCache[albumId] = albumWithTracks
+                }
                 albumWithTracks?.let { album ->
                     val generatedColor = generateColorFromUrl(album.album.coverUrl)
                     albumBackgroundColor = generatedColor
-                    println("AlbumViewModel: Generated color for album ${album.album.title}: $generatedColor")
                 }
             } catch (e: Exception) {
-                println("AlbumViewModel: error loading album: ${e.message}")
             }
         }
     }
@@ -57,21 +60,17 @@ class AlbumViewModel(
 
     fun setAlbumColor(albumId: String, color: Color) {
         if (color == Color(0xFFAAA287)) {
-            println("[AlbumViewModel] setAlbumColor: albumId=$albumId, игнорируем дефолтный цвет")
             return
         }
         albumColors[albumId] = color
-        println("[AlbumViewModel] setAlbumColor: albumId=$albumId, color=$color (saved)")
     }
 
     fun getAlbumColor(albumId: String?): Color {
         if (albumId == null) return Color(0xFFAAA287)
         val existing = albumColors[albumId]
         if (existing != null) {
-            println("[AlbumViewModel] getAlbumColor: albumId=$albumId, color=$existing (cached)")
             return existing
         }
-        println("[AlbumViewModel] getAlbumColor: albumId=$albumId, color=DEFAULT (not found in cache)")
         return Color(0xFFAAA287)
     }
     

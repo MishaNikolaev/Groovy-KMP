@@ -20,7 +20,6 @@ class RegisterViewModel(
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val response = registerUseCase(email, password, username)
-                println("Register response: $response")
                 if (response.token != null || response.user != null) {
                     onResult(true)
                 } else {

@@ -206,7 +206,6 @@ fun RegisterScreen(
 
                 OutlinedButton(
                     onClick = {
-                        println("Google Sign Up clicked (TODO: implement)")
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -234,7 +233,6 @@ fun RegisterScreen(
 
                 OutlinedButton(
                     onClick = {
-                        println("Apple Sign Up clicked (TODO: implement)")
                     },
                     modifier = Modifier
                         .fillMaxWidth()
