@@ -74,6 +74,12 @@ class AlbumViewModel(
         return Color(0xFFAAA287)
     }
     
+    fun getAlbumCoverColor(albumId: String?): Color {
+        if (albumId == null) return Color(0xFFAAA287)
+        val album = albumCache[albumId]
+        return album?.album?.coverColor?.let { Color(it) } ?: Color(0xFFAAA287)
+    }
+    
     private fun generateColorFromUrl(url: String?): Color {
         if (url == null) return Color(0xFFAAA287)
         

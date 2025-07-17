@@ -119,6 +119,7 @@ private fun MainSection(
     var lastAlbumScreen: (() -> Unit)? = null
     val albumViewModel = remember { getKoin().get<com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel>() }
     val backgroundColor = albumViewModel.getBackgroundColor()
+    var albumIdForReturn by remember { mutableStateOf<String?>(null) }
 
     // Добавлено: обновлять цвет альбома при смене currentTrack
     LaunchedEffect(currentTrack?.albumId) {
@@ -133,7 +134,10 @@ private fun MainSection(
             playerState = playerState,
             progress = progress,
             onBackClick = { showFullPlayer = false },
-            onBackToAlbumClick = lastAlbumScreen,
+            onBackToAlbumClick = {
+                albumIdForReturn = currentTrack.albumId
+                showFullPlayer = false
+            },
             onPlayPauseClick = {
                 if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack) else playerViewModel.resume(playerInfo.playlist, currentTrack)
             },
@@ -164,6 +168,63 @@ private fun MainSection(
             duration = playerInfo.progress.totalDuration,
             backgroundColor = backgroundColor
         )
+    } else if (albumIdForReturn != null) {
+        val albumViewModel = remember { getKoin().get<com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel>() }
+        val albumState by albumViewModel.state.collectAsState()
+        LaunchedEffect(albumIdForReturn) {
+            albumIdForReturn?.let { albumViewModel.load(it) }
+        }
+        albumState?.let { albumWithTracks ->
+            Scaffold(
+                bottomBar = {
+                    if (currentTrack != null) {
+                        PlayerBar(
+                            currentTrack = currentTrack,
+                            playerState = playerState,
+                            progress = progress,
+                            onPlayerBarClick = {
+                                showFullPlayer = true
+                                albumIdForReturn = null
+                            },
+                            onPlayPauseClick = {
+                                if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack) else playerViewModel.resume(playerInfo.playlist, currentTrack)
+                            },
+                            onNextClick = {
+                                val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack.id }
+                                val nextIndex = if (index == -1) 0 else (index + 1) % playerInfo.playlist.size
+                                val nextTrack = playerInfo.playlist.getOrNull(nextIndex)
+                                if (nextTrack != null) playerViewModel.play(playerInfo.playlist, nextTrack)
+                            },
+                            onPreviousClick = {
+                                val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack.id }
+                                val prevIndex = if (index == -1) 0 else (index - 1 + playerInfo.playlist.size) % playerInfo.playlist.size
+                                val prevTrack = playerInfo.playlist.getOrNull(prevIndex)
+                                if (prevTrack != null) playerViewModel.play(playerInfo.playlist, prevTrack)
+                            },
+                            onTrackProgressChanged = { newProgress ->
+                                val duration = playerInfo.progress.totalDuration
+                                if (duration > 0) {
+                                    val newPosition = (duration * newProgress).toLong()
+                                    playerViewModel.onTrackProgressChanged(newProgress)
+                                }
+                            }
+                        )
+                    }
+                }
+            ) { paddingValues ->
+                Box(modifier = Modifier.padding(paddingValues)) {
+                    com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen(
+                        albumWithTracks = albumWithTracks,
+                        onBack = { albumIdForReturn = null },
+                        onArtistClick = {},
+                        onLikeClick = {},
+                        onPlayClick = {},
+                        onPauseClick = {},
+                        onTrackClick = {}
+                    )
+                }
+            }
+        }
     } else {
         Scaffold(
             bottomBar = {

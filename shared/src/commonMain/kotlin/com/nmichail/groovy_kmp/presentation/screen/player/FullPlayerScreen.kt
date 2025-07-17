@@ -28,7 +28,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.generateAlbumColor
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun FullPlayerScreen(
     currentTrack: Track?,
@@ -70,8 +70,9 @@ fun FullPlayerScreen(
     }
 
     val albumViewModel = remember { org.koin.mp.KoinPlatform.getKoin().get<com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel>() }
-    val albumColor = remember(currentTrack?.coverUrl) {
-        generateAlbumColor(currentTrack?.coverUrl)
+    val albumColor = remember(currentTrack?.coverColor, currentTrack?.albumId) {
+        currentTrack?.coverColor?.let { Color(it) }
+            ?: albumViewModel.getAlbumCoverColor(currentTrack?.albumId)
     }
     val albumState by albumViewModel.state.collectAsState()
     val currentAlbum = if (albumState?.album?.id == currentTrack.albumId) albumState?.album else null
@@ -114,7 +115,7 @@ fun FullPlayerScreen(
         Spacer(modifier = Modifier.height(16.dp))
         Box(
             modifier = Modifier
-                .size(220.dp)
+                .size(270.dp)
                 .clip(RoundedCornerShape(18.dp))
                 .background(Color.LightGray)
         ) {
@@ -136,7 +137,7 @@ fun FullPlayerScreen(
             style = MaterialTheme.typography.headlineSmall.copy(
                 fontWeight = FontWeight.Bold,
                 fontSize = 26.sp,
-                color = Color.White,
+                color = Color.White.copy(alpha = 0.85f),
                 fontFamily = AlbumFontFamily
             ),
             textAlign = TextAlign.Center,
@@ -183,6 +184,7 @@ fun FullPlayerScreen(
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
+            Spacer(modifier = Modifier.height(12.dp))
             Slider(
                 value = if (isDragging) dragProgress else progress,
                 onValueChange = { newProgress ->
@@ -192,15 +194,25 @@ fun FullPlayerScreen(
                 onValueChangeFinished = {
                     lastSeekProgress = dragProgress
                     onSeek(dragProgress)
-                    // isDragging сбросится в LaunchedEffect, когда progress обновится
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp),
                 colors = SliderDefaults.colors(
                     thumbColor = Color.White,
                     activeTrackColor = Color.White,
-                    inactiveTrackColor = Color(0x33FFFFFF)
-                )
+                    inactiveTrackColor = Color.White.copy(alpha = 0.25f)
+                ),
+                thumb = {
+                    Box(
+                        Modifier
+                            .size(8.dp)
+                            .offset(y = 6.dp, x = 4.dp)
+                            .background(Color.White, shape = CircleShape)
+                    )
+                }
             )
+            Spacer(modifier = Modifier.height(8.dp))
             val displayedPosition = if (isDragging) {
                 (dragProgress * duration).toLong()
             } else {
@@ -225,26 +237,17 @@ fun FullPlayerScreen(
             }
         }
         Spacer(modifier = Modifier.height(24.dp))
-        // Первый ряд: Mute, Previous, Play, Next, Like
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { /* TODO: Mute */ }, modifier = Modifier.size(48.dp)) {
-                Icon(
-                    imageVector = Icons.Filled.VolumeOff,
-                    contentDescription = "Mute",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            IconButton(onClick = onPreviousClick, modifier = Modifier.size(56.dp)) {
+            IconButton(onClick = onPreviousClick, modifier = Modifier.size(64.dp)) {
                 Icon(
                     imageVector = Icons.Filled.SkipPrevious,
                     contentDescription = "Previous",
                     tint = Color.White,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(40.dp)
                 )
             }
             IconButton(
@@ -252,7 +255,7 @@ fun FullPlayerScreen(
                 modifier = Modifier
                     .size(80.dp)
                     .background(
-                        color = Color(0xFFE94057),
+                        color = Color.White,
                         shape = CircleShape
                     )
             ) {
@@ -263,31 +266,24 @@ fun FullPlayerScreen(
                         Icons.Filled.PlayArrow
                     },
                     contentDescription = if (playerState is PlayerState.Playing) "Pause" else "Play",
-                    tint = Color.White,
-                    modifier = Modifier.size(40.dp)
+                    tint = Color.Black,
+                    modifier = Modifier.size(48.dp)
                 )
             }
-            IconButton(onClick = onNextClick, modifier = Modifier.size(56.dp)) {
+            IconButton(onClick = onNextClick, modifier = Modifier.size(64.dp)) {
                 Icon(
                     imageVector = Icons.Filled.SkipNext,
                     contentDescription = "Next",
                     tint = Color.White,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-            IconButton(onClick = { /* TODO: Like */ }, modifier = Modifier.size(48.dp)) {
-                Icon(
-                    imageVector = Icons.Filled.FavoriteBorder,
-                    contentDescription = "Like",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(40.dp)
                 )
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        // Второй ряд: Repeat, Playlist, Lyrics, Таймер, Shuffle
+        Spacer(modifier = Modifier.weight(1f))
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -299,7 +295,7 @@ fun FullPlayerScreen(
                         RepeatMode.All -> Icons.Filled.Repeat
                     },
                     contentDescription = "Repeat",
-                    tint = if (repeatMode != RepeatMode.None) Color(0xFFE94057) else Color.White,
+                    tint = Color.LightGray,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -307,31 +303,31 @@ fun FullPlayerScreen(
                 Icon(
                     imageVector = Icons.Filled.PlaylistAdd,
                     contentDescription = "Add to Playlist",
-                    tint = Color.White,
+                    tint = Color.LightGray,
                     modifier = Modifier.size(22.dp)
                 )
             }
             IconButton(onClick = { /* TODO: Lyrics */ }, modifier = Modifier.size(40.dp)) {
                 Icon(
-                    imageVector = Icons.Filled.LibraryMusic,
+                    imageVector = Icons.Filled.Lyrics,
                     contentDescription = "Lyrics",
-                    tint = Color.White,
+                    tint = Color.LightGray,
                     modifier = Modifier.size(22.dp)
                 )
             }
             IconButton(onClick = { /* TODO: Timer */ }, modifier = Modifier.size(40.dp)) {
                 Icon(
-                    imageVector = Icons.Filled.Timer,
-                    contentDescription = "Timer",
-                    tint = Color.White,
+                    imageVector = Icons.Filled.Shuffle,
+                    contentDescription = "Shuffle",
+                    tint = Color.LightGray,
                     modifier = Modifier.size(22.dp)
                 )
             }
             IconButton(onClick = onShuffleClick, modifier = Modifier.size(40.dp)) {
                 Icon(
-                    imageVector = Icons.Filled.Shuffle,
-                    contentDescription = "Shuffle",
-                    tint = if (isShuffleEnabled) Color(0xFFE94057) else Color.White,
+                    imageVector = Icons.Filled.FavoriteBorder,
+                    contentDescription = "FavoriteBorder",
+                    tint = Color.LightGray,
                     modifier = Modifier.size(22.dp)
                 )
             }

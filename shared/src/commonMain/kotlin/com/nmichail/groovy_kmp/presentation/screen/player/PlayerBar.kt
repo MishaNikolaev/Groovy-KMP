@@ -47,8 +47,9 @@ fun PlayerBar(
     if (currentTrack == null) return
 
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
-    val albumColor = remember(currentTrack?.coverUrl) {
-        generateAlbumColor(currentTrack?.coverUrl)
+    val albumColor = remember(currentTrack?.coverColor, currentTrack?.albumId) {
+        currentTrack?.coverColor?.let { Color(it) }
+            ?: albumViewModel.getAlbumCoverColor(currentTrack?.albumId)
     }
 
     var isDragging by remember { mutableStateOf(false) }
@@ -60,37 +61,29 @@ fun PlayerBar(
         }
     }
 
+    val lightBarColor = androidx.compose.ui.graphics.lerp(albumColor, Color.White, 0.85f)
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .height(80.dp)
+            .padding(5.dp)
             .clickable { onPlayerBarClick() },
-        shape = RoundedCornerShape(0.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(albumColor)
+                .clip(RoundedCornerShape(20.dp))
+                .background(lightBarColor)
         ) {
-            Slider(
-                value = if (isDragging) dragProgress else progress,
-                onValueChange = { newProgress ->
-                    isDragging = true
-                    dragProgress = newProgress
-                },
-                onValueChangeFinished = {
-                    isDragging = false
-                    onTrackProgressChanged(dragProgress)
-                },
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp),
-                colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = Color.White,
-                    inactiveTrackColor = Color(0x33FFFFFF)
-                )
+                    .fillMaxHeight()
+                    .fillMaxWidth(fraction = progress.coerceIn(0f, 1f))
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(albumColor.copy(alpha = 0.35f))
             )
             Row(
                 modifier = Modifier
@@ -102,7 +95,7 @@ fun PlayerBar(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color.White.copy(alpha = 0.1f))
+                        .background(Color.White)
                 ) {
                     PlatformImage(
                         url = currentTrack.coverUrl,
@@ -110,7 +103,6 @@ fun PlayerBar(
                         modifier = Modifier.fillMaxSize(),
                         onColorExtracted = { color ->
                             currentTrack.albumId?.let {
-                                println("[PlayerBar] setAlbumColor for albumId=$it color=$color")
                                 albumViewModel.setAlbumColor(it, color)
                             }
                         }
@@ -125,8 +117,7 @@ fun PlayerBar(
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Medium,
                             fontSize = 14.sp,
-                            color = Color.White,
-                            fontFamily = AlbumFontFamily
+                            color = Color.Black
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -135,51 +126,50 @@ fun PlayerBar(
                     Text(
                         text = currentTrack.artist ?: "",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 12.sp,
-                            fontFamily = AlbumFontFamily
+                            color = Color.Black.copy(alpha = 0.7f),
+                            fontSize = 12.sp
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.basicMarquee()
                     )
                 }
-                    IconButton(
-                        onClick = onPreviousClick,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.SkipPrevious,
-                            contentDescription = "Previous",
-                            tint = Color.Black,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    IconButton(
-                        onClick = onPlayPauseClick,
+                IconButton(
+                    onClick = onPreviousClick,
                     modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (playerState is PlayerState.Playing) {
-                                Icons.Filled.Pause
-                            } else {
-                                Icons.Filled.PlayArrow
-                            },
-                            contentDescription = if (playerState is PlayerState.Playing) "Pause" else "Play",
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.SkipPrevious,
+                        contentDescription = "Previous",
                         tint = Color.Black,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    IconButton(
-                        onClick = onNextClick,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.SkipNext,
-                            contentDescription = "Next",
-                            tint = Color.Black,
-                            modifier = Modifier.size(24.dp)
-                        )
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                IconButton(
+                    onClick = onPlayPauseClick,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = if (playerState is PlayerState.Playing) {
+                            Icons.Filled.Pause
+                        } else {
+                            Icons.Filled.PlayArrow
+                        },
+                        contentDescription = if (playerState is PlayerState.Playing) "Pause" else "Play",
+                        tint = Color.Black,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                IconButton(
+                    onClick = onNextClick,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.SkipNext,
+                        contentDescription = "Next",
+                        tint = Color.Black,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
         }

@@ -52,7 +52,6 @@ class MusicPlayerService : Service() {
     private var progressJob: Job? = null
 
     private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
-        // ... existing code ...
     }
 
     inner class MusicPlayerBinder : Binder() {

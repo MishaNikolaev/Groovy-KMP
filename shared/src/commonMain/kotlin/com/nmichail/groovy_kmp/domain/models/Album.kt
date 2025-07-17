@@ -10,5 +10,6 @@ data class Album(
     val coverUrl: String? = null,
     val createdAt: String? = null,
     val genre: String? = null,
-    val artistPhotoUrl: String? = null
+    val artistPhotoUrl: String? = null,
+    val coverColor: Long? = null
 ) 

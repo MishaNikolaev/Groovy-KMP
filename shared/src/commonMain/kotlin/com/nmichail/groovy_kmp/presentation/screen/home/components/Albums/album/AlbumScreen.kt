@@ -49,13 +49,13 @@ import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumC
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.alpha
 import com.nmichail.groovy_kmp.domain.models.Track
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.style.TextAlign
 
-// Вынести генерацию albumColor в функцию
 fun generateAlbumColor(url: String?): Color {
     val hash = (url ?: "").hashCode()
     val hue = (hash % 360).toFloat()
@@ -109,11 +109,11 @@ fun AlbumScreen(
     val backgroundColor = albumViewModel.getBackgroundColor()
     val coroutineScope = rememberCoroutineScope()
 
-    val albumColor = remember(albumWithTracks.album.coverUrl) {
-        generateAlbumColor(albumWithTracks.album.coverUrl)
+    val albumColor = remember(albumWithTracks.album.coverColor) {
+        albumWithTracks.album.coverColor?.let { Color(it) } ?: Color(0xFFAAA287)
     }
 
-    androidx.compose.runtime.key(albumWithTracks.album.id) {
+    key(albumWithTracks.album.id) {
         if (albumColor == Color(0xFFAAA287)) {
             PlatformImage(
                 url = albumWithTracks.album.coverUrl,
@@ -167,7 +167,6 @@ fun AlbumScreen(
                             modifier = Modifier.fillMaxSize(),
                             onColorExtracted = { color ->
                                 albumWithTracks.album.id?.let {
-                                    println("[AlbumScreen] setAlbumColor for albumId=$it color=$color")
                                     albumViewModel.setAlbumColor(it, color)
                                 }
                             }
@@ -177,14 +176,14 @@ fun AlbumScreen(
                     Text(
                         text = albumWithTracks.album.title ?: "",
                         style = MaterialTheme.typography.headlineMedium.copy(
-                            fontSize = 22.sp, // чуть больше
+                            fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = AlbumFontFamily,
-                            color = Color.White
+                            color = Color.White.copy(alpha = 0.85f)
                         ),
                         maxLines = 2
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -282,6 +281,7 @@ fun AlbumScreen(
             TrackRow(
                 track = track,
                 isPlaying = isPlaying && currentTrack?.id == track.id,
+                index = index,
                 onClick = {
                     coroutineScope.launch {
                         playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
@@ -298,7 +298,7 @@ fun AlbumScreen(
 }
 
 @Composable
-fun TrackRow(track: com.nmichail.groovy_kmp.domain.models.Track, isPlaying: Boolean, onClick: () -> Unit) {
+fun TrackRow(track: Track, isPlaying: Boolean, index: Int, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -309,6 +309,15 @@ fun TrackRow(track: com.nmichail.groovy_kmp.domain.models.Track, isPlaying: Bool
         Box(Modifier.width(32.dp), contentAlignment = Alignment.Center) {
             if (isPlaying) {
                 AnimatedPlayingIndicator()
+            } else {
+                Text(
+                    text = "${index + 1}",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 17.sp
+                    )
+                )
             }
         }
         Column(
@@ -317,17 +326,8 @@ fun TrackRow(track: com.nmichail.groovy_kmp.domain.models.Track, isPlaying: Bool
             Text(
                 text = track.title ?: "",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    fontFamily = AlbumFontFamily
-                )
-            )
-            Text(
-                text = track.artist ?: "",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color.Gray,
-                    fontSize = 13.sp,
-                    fontFamily = AlbumFontFamily
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 18.sp
                 )
             )
         }
