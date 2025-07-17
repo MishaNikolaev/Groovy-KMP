@@ -379,6 +379,7 @@ class MusicPlayerService : Service() {
                     serviceScope.launch {
                         val actualDuration = mp.duration.toLong()
                         println("[MusicPlayerService] Actual duration: $actualDuration")
+                        playerViewModel.updateTrackDuration(actualDuration)
                         mp.start()
                         println("[MusicPlayerService] Started audio playback for: ${track.title}")
                         startProgressUpdates()
@@ -429,6 +430,7 @@ class MusicPlayerService : Service() {
     
     private fun seekAudioPlayback(position: Long) {
         mediaPlayer?.seekTo(position.toInt())
+        playerViewModel.updateTrackPosition(position)
     }
 
     private fun playNextTrack() {

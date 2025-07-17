@@ -55,6 +55,20 @@ fun FullPlayerScreen(
         animationSpec = androidx.compose.animation.core.tween(100)
     )
 
+    var isDragging by remember { mutableStateOf(false) }
+    var dragProgress by remember { mutableStateOf(progress) }
+    var lastSeekProgress by remember { mutableStateOf<Float?>(null) }
+
+    LaunchedEffect(progress) {
+        if (lastSeekProgress != null && kotlin.math.abs(progress - lastSeekProgress!!) < 0.01f) {
+            isDragging = false
+            lastSeekProgress = null
+        }
+        if (!isDragging) {
+            dragProgress = progress
+        }
+    }
+
     val albumViewModel = remember { org.koin.mp.KoinPlatform.getKoin().get<com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel>() }
     val albumColor = remember(currentTrack?.coverUrl) {
         generateAlbumColor(currentTrack?.coverUrl)
@@ -170,8 +184,16 @@ fun FullPlayerScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Slider(
-                value = animatedProgress,
-                onValueChange = onSeek,
+                value = if (isDragging) dragProgress else progress,
+                onValueChange = { newProgress ->
+                    isDragging = true
+                    dragProgress = newProgress
+                },
+                onValueChangeFinished = {
+                    lastSeekProgress = dragProgress
+                    onSeek(dragProgress)
+                    // isDragging сбросится в LaunchedEffect, когда progress обновится
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = SliderDefaults.colors(
                     thumbColor = Color.White,
@@ -179,12 +201,17 @@ fun FullPlayerScreen(
                     inactiveTrackColor = Color(0x33FFFFFF)
                 )
             )
+            val displayedPosition = if (isDragging) {
+                (dragProgress * duration).toLong()
+            } else {
+                currentPosition
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = formatTime(currentPosition),
+                    text = formatTime(displayedPosition),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color.White
                     )
