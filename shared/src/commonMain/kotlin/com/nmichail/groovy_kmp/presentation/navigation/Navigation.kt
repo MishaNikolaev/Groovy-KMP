@@ -121,7 +121,6 @@ private fun MainSection(
     val backgroundColor = albumViewModel.getBackgroundColor()
     var albumIdForReturn by remember { mutableStateOf<String?>(null) }
 
-    // Добавлено: обновлять цвет альбома при смене currentTrack
     LaunchedEffect(currentTrack?.albumId) {
         currentTrack?.albumId?.let { albumId ->
             albumViewModel.load(albumId)
