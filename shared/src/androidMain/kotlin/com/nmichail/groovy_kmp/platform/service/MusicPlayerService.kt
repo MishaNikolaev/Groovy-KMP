@@ -363,6 +363,13 @@ class MusicPlayerService : Service() {
                     stopProgressUpdates()
                     true
                 }
+                setOnSeekCompleteListener { mp ->
+                    val pos = mp.currentPosition.toLong()
+                    playerViewModel.updateTrackPosition(pos)
+                    if (mp.isPlaying) {
+                        startProgressUpdates()
+                    }
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -394,8 +401,12 @@ class MusicPlayerService : Service() {
     }
 
     private fun seekAudioPlayback(position: Long) {
-        mediaPlayer?.seekTo(position.toInt())
-        playerViewModel.updateTrackPosition(position)
+        mediaPlayer?.let { mp ->
+            mp.seekTo(position.toInt())
+            if (mp.isPlaying) {
+                startProgressUpdates()
+            }
+        }
     }
 
     private fun playNextTrack() {

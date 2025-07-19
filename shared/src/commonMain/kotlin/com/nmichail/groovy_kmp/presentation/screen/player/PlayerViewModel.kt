@@ -66,6 +66,10 @@ class PlayerViewModel(
             val playlist = playerInfo.playlist
             val index = playlist.indexOfFirst { it.id == playerInfo.track?.id }
             musicServiceController.seekTo(playlist, if (index == -1) 0 else index, newPosition)
+            // Also update repository state to keep UI in sync
+            viewModelScope.launch {
+                playerUseCases.seekTo(newPosition)
+            }
         }
     }
 

@@ -122,6 +122,9 @@ class PlayerRepositoryImpl : PlayerRepository {
         _playerInfo.update {
             it.copy(progress = it.progress.copy(currentPosition = clampedPosition))
         }
+        if (_playerInfo.value.state is PlayerState.Playing) {
+            startProgressTracking()
+        }
     }
 
     override suspend fun updateCurrentTrackDuration(duration: Long) {
@@ -148,6 +151,9 @@ class PlayerRepositoryImpl : PlayerRepository {
     fun updateTrackPosition(position: Long) {
         _playerInfo.update {
             it.copy(progress = it.progress.copy(currentPosition = position))
+        }
+        if (_playerInfo.value.state is PlayerState.Playing) {
+            startProgressTracking()
         }
     }
 
