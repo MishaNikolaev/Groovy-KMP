@@ -11,8 +11,20 @@ class GetAlbumWithTracksUseCase(
     private val trackRepository: TrackRepository
 ) {
     suspend operator fun invoke(albumId: String): AlbumWithTracks? {
-        val album = albumRepository.getAlbum(albumId) ?: return null
+        try {
+            println("[GetAlbumWithTracksUseCase] Loading album with id=$albumId")
+            val album = albumRepository.getAlbum(albumId)
+            println("[GetAlbumWithTracksUseCase] Album loaded: $album")
         val tracks = trackRepository.getTracksByAlbum(albumId)
-        return AlbumWithTracks(album, tracks)
+            println("[GetAlbumWithTracksUseCase] Tracks loaded for albumId=$albumId: ${tracks.size} tracks")
+            tracks.forEach { t ->
+                println("[GetAlbumWithTracksUseCase] Track: id=${t.id}, albumId=${t.albumId}, title=${t.title}, duration=${t.duration}, artist=${t.artist}")
+            }
+            return if (album != null) AlbumWithTracks(album, tracks) else null
+        } catch (e: Exception) {
+            println("[GetAlbumWithTracksUseCase] ERROR loading album or tracks for albumId=$albumId: ${e.message}")
+            e.printStackTrace()
+            return null
+        }
     }
 } 

@@ -27,6 +27,8 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.generateAlbumColor
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -78,11 +80,13 @@ fun FullPlayerScreen(
     val currentAlbum = if (albumState?.album?.id == currentTrack.albumId) albumState?.album else null
     val artistPhotoUrl = currentAlbum?.artistPhotoUrl
 
+    val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(albumColor)
-            .padding(16.dp),
+            .padding(16.dp)
+            .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(

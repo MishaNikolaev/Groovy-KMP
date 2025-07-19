@@ -29,11 +29,11 @@ class AlbumViewModel(
             lastLoadedAlbumId = albumId
             return
         }
-
+        
         if (lastLoadedAlbumId != albumId) {
             _state.value = null
         }
-
+        
         viewModelScope.launch {
             try {
                 val albumWithTracks = getAlbumWithTracksUseCase(albumId)

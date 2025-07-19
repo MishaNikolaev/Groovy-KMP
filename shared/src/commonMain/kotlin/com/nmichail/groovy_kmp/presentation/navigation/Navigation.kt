@@ -5,6 +5,7 @@ import LoginViewModel
 import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
@@ -25,6 +26,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.mp.KoinPlatform.getKoin
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
 
 @Composable
 fun Navigation() {
@@ -115,11 +118,11 @@ private fun MainSection(
     val progress = if (playerInfo.progress.totalDuration > 0) {
         playerInfo.progress.currentPosition.toFloat() / playerInfo.progress.totalDuration
     } else 0f
-    var showFullPlayer by remember { mutableStateOf(false) }
+    var showFullPlayer by rememberSaveable { mutableStateOf(false) }
+    var albumIdForReturn by rememberSaveable { mutableStateOf<String?>(null) }
     var lastAlbumScreen: (() -> Unit)? = null
-    val albumViewModel = remember { getKoin().get<com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel>() }
+    val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val backgroundColor = albumViewModel.getBackgroundColor()
-    var albumIdForReturn by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(currentTrack?.albumId) {
         currentTrack?.albumId?.let { albumId ->
@@ -127,7 +130,7 @@ private fun MainSection(
         }
     }
 
-    if (showFullPlayer && currentTrack != null) {
+    if (showFullPlayer == true && currentTrack != null) {
         FullPlayerScreen(
             currentTrack = currentTrack,
             playerState = playerState,
