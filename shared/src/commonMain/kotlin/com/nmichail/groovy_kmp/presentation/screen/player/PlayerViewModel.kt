@@ -3,6 +3,7 @@ package com.nmichail.groovy_kmp.presentation.screen.player
 import com.nmichail.groovy_kmp.data.repository.PlayerRepositoryImpl
 import com.nmichail.groovy_kmp.domain.MusicServiceController
 import com.nmichail.groovy_kmp.domain.models.PlayerInfo
+import com.nmichail.groovy_kmp.domain.models.PlayerState
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.usecases.PlayerUseCases
 import kotlinx.coroutines.CoroutineScope
@@ -40,6 +41,9 @@ class PlayerViewModel(
 
     private fun observePlayerInfo() {
         playerUseCases.getPlayerInfo().onEach { info ->
+            println("[PlayerViewModel] observePlayerInfo: state=${info.state}, position=${info.progress.currentPosition}")
+            if (info.state is PlayerState.Playing) println("[PlayerViewModel] STATE = PLAYING for track: ${info.track?.title}")
+            if (info.state is PlayerState.Paused) println("[PlayerViewModel] STATE = PAUSED for track: ${info.track?.title}")
             _playerInfo.value = info
             _currentPosition.value = info.progress.currentPosition
             if (info.progress.totalDuration > 0) {
@@ -80,15 +84,20 @@ class PlayerViewModel(
     }
 
     fun pause(playlist: List<Track>, track: Track) {
+        println("[PlayerViewModel] pause() called, playlist size: ${playlist.size}, track: ${track.title}")
         val index = playlist.indexOfFirst { it.id == track.id }
         musicServiceController.pause(playlist, if (index == -1) 0 else index)
         viewModelScope.launch { playerUseCases.pauseTrack() }
     }
 
     fun resume(playlist: List<Track>, track: Track) {
+        println("[PlayerViewModel] resume() called, playlist size: ${playlist.size}, track: ${track.title}")
         val index = playlist.indexOfFirst { it.id == track.id }
         musicServiceController.resume(playlist, if (index == -1) 0 else index)
-        viewModelScope.launch { playerUseCases.resumeTrack() }
+        viewModelScope.launch {
+            println("[PlayerViewModel] launching playerUseCases.resumeTrack() for track: ${track.title}")
+            playerUseCases.resumeTrack()
+        }
     }
 
     fun stop() {

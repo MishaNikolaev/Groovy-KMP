@@ -52,6 +52,47 @@ class MusicPlayerService : Service() {
     private var progressJob: Job? = null
 
     private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
+        override fun onPause() {
+            if (playerViewModel.playerInfo.value.state is PlayerState.Paused) {
+                android.util.Log.d("MusicPlayerService", "mediaSessionCallback.onPause: already paused, skip")
+                return
+            }
+            pauseAudioPlayback()
+        }
+        override fun onPlay() {
+            if (playerViewModel.playerInfo.value.state is PlayerState.Playing) {
+                android.util.Log.d("MusicPlayerService", "mediaSessionCallback.onPlay: already playing, skip")
+                return
+            }
+            resumeAudioPlayback()
+        }
+        override fun onSkipToNext() {
+            val playlist = currentPlaylist
+            val current = currentTrack
+            if (playlist != null && current != null) {
+                val idx = playlist.indexOfFirst { it.id == current.id }
+                val next = if (idx != -1 && idx + 1 < playlist.size) playlist[idx + 1] else null
+                if (next != null) {
+                    currentTrack = next
+                    startAudioPlayback(next)
+                }
+            }
+        }
+        override fun onSkipToPrevious() {
+            val playlist = currentPlaylist
+            val current = currentTrack
+            if (playlist != null && current != null) {
+                val idx = playlist.indexOfFirst { it.id == current.id }
+                val prev = if (idx > 0) playlist[idx - 1] else null
+                if (prev != null) {
+                    currentTrack = prev
+                    startAudioPlayback(prev)
+                }
+            }
+        }
+        override fun onSeekTo(pos: Long) {
+            seekAudioPlayback(pos)
+        }
     }
 
     inner class MusicPlayerBinder : Binder() {
@@ -173,6 +214,7 @@ class MusicPlayerService : Service() {
     private fun setupMediaSession() {
         mediaSession = MediaSessionCompat(this, "MusicPlayerService")
         mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
+        mediaSession.setCallback(mediaSessionCallback)
     }
 
     private fun observePlayerState() {
@@ -202,7 +244,6 @@ class MusicPlayerService : Service() {
 
                 updateNotification(playerInfo)
                 updateMediaSessionState(playerInfo)
-
             }
         }
     }
@@ -340,7 +381,7 @@ class MusicPlayerService : Service() {
         progressJob = null
     }
 
-    private fun startAudioPlayback(track: Track) {
+    private fun startAudioPlayback(track: Track, startPosition: Long = -1L) {
         val storagePath = track.storagePath ?: return
         try {
             cleanupMediaPlayer()
@@ -351,8 +392,16 @@ class MusicPlayerService : Service() {
                     serviceScope.launch {
                         val actualDuration = mp.duration.toLong()
                         playerViewModel.updateTrackDuration(actualDuration)
+                        if (startPosition > 0L) {
+                            mp.seekTo(startPosition.toInt())
+                        }
                         mp.start()
+                        playerViewModel.updateTrackPosition(mp.currentPosition.toLong())
                         startProgressUpdates()
+                        val playlist = currentPlaylist ?: emptyList()
+                        playerViewModel.play(playlist, track)
+                        updateNotification(playerViewModel.playerInfo.value)
+                        updateMediaSessionState(playerViewModel.playerInfo.value)
                     }
                 }
                 setOnCompletionListener { mp ->
@@ -369,6 +418,8 @@ class MusicPlayerService : Service() {
                     if (mp.isPlaying) {
                         startProgressUpdates()
                     }
+                    updateNotification(playerViewModel.playerInfo.value)
+                    updateMediaSessionState(playerViewModel.playerInfo.value)
                 }
             }
         } catch (e: Exception) {
@@ -377,21 +428,59 @@ class MusicPlayerService : Service() {
     }
 
     private fun pauseAudioPlayback() {
+        if (playerViewModel.playerInfo.value.state is PlayerState.Paused) {
+            android.util.Log.d("MusicPlayerService", "pauseAudioPlayback: already paused, skip")
+            return
+        }
+        android.util.Log.d("MusicPlayerService", "pauseAudioPlayback called")
         mediaPlayer?.let { mp ->
             if (mp.isPlaying) {
                 mp.pause()
             }
         }
         stopProgressUpdates()
+        serviceScope.launch {
+            val playlist = currentPlaylist ?: emptyList()
+            val track = currentTrack
+            if (track != null) {
+                playerViewModel.pause(playlist, track)
+            }
+        }
+        updateNotification(playerViewModel.playerInfo.value)
+        updateMediaSessionState(playerViewModel.playerInfo.value)
     }
 
     private fun resumeAudioPlayback() {
-        mediaPlayer?.let { mp ->
-            if (!mp.isPlaying) {
-                mp.start()
+        if (playerViewModel.playerInfo.value.state is PlayerState.Playing) {
+            android.util.Log.d("MusicPlayerService", "resumeAudioPlayback: already playing, skip")
+            return
+        }
+        android.util.Log.d("MusicPlayerService", "resumeAudioPlayback called")
+        val track = currentTrack
+        if (track == null) return
+        val currentPosition = playerViewModel.playerInfo.value.progress.currentPosition
+        val totalDuration = playerViewModel.playerInfo.value.progress.totalDuration
+        if (mediaPlayer == null) {
+            android.util.Log.d("MusicPlayerService", "resumeAudioPlayback: mediaPlayer is null, recreating...")
+            val startPos = if (currentPosition >= totalDuration && totalDuration > 0) 0L else currentPosition
+            startAudioPlayback(track, if (startPos > 0L) startPos else -1L)
+            serviceScope.launch {
+                val playlist = currentPlaylist ?: emptyList()
+                playerViewModel.resume(playlist, track)
+            }
+        } else {
+            if (currentPosition >= totalDuration && totalDuration > 0) {
+                mediaPlayer?.seekTo(0)
+            }
+            mediaPlayer?.start()
+            playerViewModel.updateTrackPosition(mediaPlayer?.currentPosition?.toLong() ?: 0L)
+            serviceScope.launch {
+                val playlist = currentPlaylist ?: emptyList()
+                playerViewModel.resume(playlist, track)
             }
         }
-        startProgressUpdates()
+        updateNotification(playerViewModel.playerInfo.value)
+        updateMediaSessionState(playerViewModel.playerInfo.value)
     }
 
     private fun stopAudioPlayback() {
@@ -406,6 +495,8 @@ class MusicPlayerService : Service() {
             if (mp.isPlaying) {
                 startProgressUpdates()
             }
+            updateNotification(playerViewModel.playerInfo.value)
+            updateMediaSessionState(playerViewModel.playerInfo.value)
         }
     }
 
@@ -416,6 +507,7 @@ class MusicPlayerService : Service() {
             val idx = playlist.indexOfFirst { it.id == current.id }
             val next = if (idx != -1 && idx + 1 < playlist.size) playlist[idx + 1] else null
             if (next != null) {
+                currentTrack = next
                 startAudioPlayback(next)
             }
         }
@@ -428,6 +520,7 @@ class MusicPlayerService : Service() {
             val idx = playlist.indexOfFirst { it.id == current.id }
             val prev = if (idx > 0) playlist[idx - 1] else null
             if (prev != null) {
+                currentTrack = prev
                 startAudioPlayback(prev)
             }
         }

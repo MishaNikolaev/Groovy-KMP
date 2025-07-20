@@ -55,10 +55,12 @@ class PlayerRepositoryImpl : PlayerRepository {
         }
 
         _playerInfo.update {
+            val isSameTrack = it.track?.id == track.id
+            val currentPosition = if (isSameTrack) it.progress.currentPosition else 0L
             it.copy(
                 state = PlayerState.Playing(track),
                 track = track,
-                progress = PlaybackProgress(currentPosition = 0L, totalDuration = it.progress.totalDuration)
+                progress = PlaybackProgress(currentPosition = currentPosition, totalDuration = it.progress.totalDuration)
             )
         }
         startProgressTracking()
@@ -66,6 +68,11 @@ class PlayerRepositoryImpl : PlayerRepository {
 
     override suspend fun pause() {
         val currentTrack = _playerInfo.value.track
+        if (_playerInfo.value.state is PlayerState.Paused) {
+            println("[PlayerRepositoryImpl] pause() skipped: already paused")
+            return
+        }
+        println("[PlayerRepositoryImpl] pause() called, current state: ${_playerInfo.value.state}, track: ${currentTrack?.title}")
         if (_playerInfo.value.state is PlayerState.Playing && currentTrack != null) {
             _playerInfo.update { it.copy(state = PlayerState.Paused(currentTrack)) }
             stopProgressTracking()
@@ -74,8 +81,10 @@ class PlayerRepositoryImpl : PlayerRepository {
 
     override suspend fun resume() {
         val currentTrack = _playerInfo.value.track
+        println("[PlayerRepositoryImpl] resume() called, current state: ${_playerInfo.value.state}")
         if (_playerInfo.value.state is PlayerState.Paused && currentTrack != null) {
             _playerInfo.update { it.copy(state = PlayerState.Playing(currentTrack)) }
+            println("[PlayerRepositoryImpl] state updated to Playing for track: ${currentTrack.title}")
             startProgressTracking()
         }
     }
@@ -166,6 +175,13 @@ class PlayerRepositoryImpl : PlayerRepository {
 
     private fun startProgressTracking() {
         stopProgressTracking()
+        println("[PlayerRepositoryImpl] startProgressTracking: currentPosition=${_playerInfo.value.progress.currentPosition}, totalDuration=${_playerInfo.value.progress.totalDuration}")
+        val currentInfo = _playerInfo.value
+        val currentProgress = currentInfo.progress
+        if (currentProgress.currentPosition >= currentProgress.totalDuration && currentProgress.totalDuration > 0) {
+            println("[PlayerRepositoryImpl] startProgressTracking: not starting, already at end")
+            return
+        }
         progressJob = scope.launch {
             while (isActive) {
                 delay(1000)
@@ -177,7 +193,9 @@ class PlayerRepositoryImpl : PlayerRepository {
                 val newPosition = currentProgress.currentPosition + 1000
                 if (currentProgress.totalDuration > 0 && newPosition >= currentProgress.totalDuration) {
                     withContext(Dispatchers.Main) {
+                        println("[PlayerRepositoryImpl] handleTrackCompletion: newPosition=$newPosition, totalDuration=${currentProgress.totalDuration}")
                         handleTrackCompletion()
+                        stopProgressTracking()
                     }
                 } else {
                     _playerInfo.update {
@@ -189,11 +207,13 @@ class PlayerRepositoryImpl : PlayerRepository {
     }
 
     private fun stopProgressTracking() {
+        println("[PlayerRepositoryImpl] stopProgressTracking")
         progressJob?.cancel()
     }
 
     private suspend fun handleTrackCompletion() {
         val currentInfo = _playerInfo.value
+        println("[PlayerRepositoryImpl] handleTrackCompletion: state=${currentInfo.state}, position=${currentInfo.progress.currentPosition}, totalDuration=${currentInfo.progress.totalDuration}")
         when (currentInfo.repeatMode) {
             RepeatMode.One -> {
                 seekTo(0)
@@ -208,7 +228,10 @@ class PlayerRepositoryImpl : PlayerRepository {
                 if (currentTrackIndex < currentPlaylist.size - 1) {
                     skipToNext()
                 } else {
-                    pause()
+                    if (_playerInfo.value.state is PlayerState.Playing) {
+                        println("[PlayerRepositoryImpl] handleTrackCompletion: calling pause() at end of playlist")
+                        pause()
+                    }
                 }
             }
         }
