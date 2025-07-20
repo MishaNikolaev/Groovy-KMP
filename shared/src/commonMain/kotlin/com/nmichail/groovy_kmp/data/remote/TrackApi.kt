@@ -4,8 +4,11 @@ import com.nmichail.groovy_kmp.domain.models.Track
 import io.ktor.client.*
 import io.ktor.client.call.body
 import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 
 class TrackApi(private val client: HttpClient) {
     suspend fun getTracks(): List<Track> =
@@ -18,14 +21,12 @@ class TrackApi(private val client: HttpClient) {
         val response = client.get("/tracks/album/$albumId").body<String>()
         println("[TrackApi] Raw response for albumId=$albumId: $response")
         return try {
-            // Try to parse as array first
             val tracks = Json.decodeFromString<List<Track>>(response)
             println("[TrackApi] Successfully parsed as array: ${tracks.size} tracks")
             tracks
         } catch (e: Exception) {
             println("[TrackApi] Failed to parse as array, trying as single object: ${e.message}")
             try {
-                // If array fails, try to parse as single object
                 val singleTrack = Json.decodeFromString<Track>(response)
                 println("[TrackApi] Successfully parsed as single object")
                 listOf(singleTrack)
@@ -45,8 +46,35 @@ class TrackApi(private val client: HttpClient) {
             parameter("query", query)
         }.body()
 
-    suspend fun getTopTracks(): List<Track> =
-        client.get("/tracks/top").body()
+    suspend fun getTopTracks(): List<Track> {
+        return try {
+            val response = client.get("/tracks/top")
+            val rawJson = response.bodyAsText()
+            println("[TrackApi] Raw JSON: $rawJson")
+            val json = Json { ignoreUnknownKeys = true }
+            val jsonArray = Json.parseToJsonElement(rawJson).jsonArray
+            println("[TrackApi] jsonArray.size = ${jsonArray.size}")
+            val result = mutableListOf<Track>()
+            for (element in jsonArray) {
+                println("[TrackApi] Try parse: $element")
+                try {
+                    val track = json.decodeFromJsonElement<Track>(element)
+                    println("[TrackApi] Parsed track id: ${track.id}")
+                    result.add(track)
+                } catch (e: Exception) {
+                    println("[TrackApi] Error parsing track: $element\nError: ${e.message}")
+                }
+            }
+            val found50 = result.any { it.id == "50" }
+            if (!found50) {
+                println("[TrackApi] Track with id=50 NOT PARSED!")
+            }
+            result
+        } catch (e: Exception) {
+            println("[TrackApi] Error parsing top tracks: ${e.message}")
+            throw e
+        }
+    }
 
     suspend fun getRecentTracks(): List<Track> =
         client.get("/tracks/recent").body()
