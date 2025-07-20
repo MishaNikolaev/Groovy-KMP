@@ -11,4 +11,6 @@ sealed class Screen(val route: String) {
         data object Favourite : MainSection("favourite")
         data object Profile : MainSection("profile")
     }
+
+    data class Lyrics(val trackId: String) : Screen("lyrics/$trackId")
 } 

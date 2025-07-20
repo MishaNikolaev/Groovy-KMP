@@ -29,6 +29,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.generateAlbumColor
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.RepeatMode as AnimationRepeatMode
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.ui.draw.alpha
+import com.nmichail.groovy_kmp.domain.models.RepeatMode as PlayerRepeatMode
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +53,7 @@ fun FullPlayerScreen(
     onShuffleClick: () -> Unit,
     onRepeatClick: () -> Unit,
     isShuffleEnabled: Boolean = false,
-    repeatMode: RepeatMode = RepeatMode.None,
+    repeatMode: PlayerRepeatMode = PlayerRepeatMode.None,
     currentPosition: Long = 0L,
     duration: Long = 0L,
     backgroundColor: Color = Color.White
@@ -60,6 +68,7 @@ fun FullPlayerScreen(
     var isDragging by remember { mutableStateOf(false) }
     var dragProgress by remember { mutableStateOf(progress) }
     var lastSeekProgress by remember { mutableStateOf<Float?>(null) }
+    var showLyrics by remember { mutableStateOf(false) }
 
     LaunchedEffect(progress) {
         if (lastSeekProgress != null && kotlin.math.abs(progress - lastSeekProgress!!) < 0.01f) {
@@ -121,19 +130,64 @@ fun FullPlayerScreen(
             modifier = Modifier
                 .size(270.dp)
                 .clip(RoundedCornerShape(18.dp))
-                .background(Color.LightGray)
         ) {
-            PlatformImage(
-                url = currentTrack.coverUrl,
-                contentDescription = currentTrack.title,
-                modifier = Modifier.fillMaxSize(),
-                onColorExtracted = { color ->
-                    currentTrack.albumId?.let {
-                        println("[FullPlayerScreen] setAlbumColor for albumId=$it color=$color")
-                        albumViewModel.setAlbumColor(it, color)
+            if (showLyrics && currentTrack.lyrics != null) {
+                val lyrics = currentTrack.lyrics.lines
+                val infiniteTransition = rememberInfiniteTransition()
+                val animatedAlpha by infiniteTransition.animateFloat(
+                    initialValue = 0.4f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(700, easing = LinearEasing),
+                        repeatMode = AnimationRepeatMode.Reverse
+                    )
+                )
+                val maxTime = lyrics.filter { it.timeMs <= currentPosition }.maxOfOrNull { it.timeMs } ?: 0L
+                val activeIndices = lyrics.withIndex().filter { it.value.timeMs == maxTime }.map { it.index }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    val centerIndex = activeIndices.firstOrNull() ?: 0
+                    val visibleLines = (-1..1).map { offset -> centerIndex + offset }
+                    visibleLines.forEach { idx ->
+                        val line = lyrics.getOrNull(idx)
+                        if (line != null) {
+                            val isActive = idx in activeIndices
+                            val isDots = line.text.trim().replace(" ", "").replace("…", ".").all { it == '.' }
+                            println("[LYRICS] line='${line.text}' isActive=$isActive isDots=$isDots")
+                            Text(
+                                text = line.text,
+                                fontFamily = AlbumFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = when {
+                                    isActive && isDots -> 80.sp
+                                    isActive -> 32.sp
+                                    else -> 22.sp
+                                },
+                                color = if (isActive) Color.White else Color.White.copy(alpha = 0.4f),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .padding(vertical = 2.dp)
+                                    .alpha(if (isActive && isDots) animatedAlpha else 1f)
+                            )
+                        }
                     }
                 }
-            )
+            } else {
+                PlatformImage(
+                    url = currentTrack.coverUrl,
+                    contentDescription = currentTrack.title,
+                    modifier = Modifier.fillMaxSize(),
+                    onColorExtracted = { color ->
+                        currentTrack.albumId?.let {
+                            println("[FullPlayerScreen] setAlbumColor for albumId=$it color=$color")
+                            albumViewModel.setAlbumColor(it, color)
+                        }
+                    }
+                )
+            }
         }
         Spacer(modifier = Modifier.height(20.dp))
         Text(
@@ -294,9 +348,10 @@ fun FullPlayerScreen(
             IconButton(onClick = onRepeatClick, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = when (repeatMode) {
-                        RepeatMode.None -> Icons.Filled.Repeat
-                        RepeatMode.One -> Icons.Filled.RepeatOne
-                        RepeatMode.All -> Icons.Filled.Repeat
+                        PlayerRepeatMode.None -> Icons.Filled.Repeat
+                        PlayerRepeatMode.One -> Icons.Filled.RepeatOne
+                        PlayerRepeatMode.All -> Icons.Filled.Repeat
+                        else -> Icons.Filled.Repeat
                     },
                     contentDescription = "Repeat",
                     tint = Color.LightGray,
@@ -311,11 +366,18 @@ fun FullPlayerScreen(
                     modifier = Modifier.size(22.dp)
                 )
             }
-            IconButton(onClick = { /* TODO: Lyrics */ }, modifier = Modifier.size(40.dp)) {
+            IconButton(
+                onClick = {
+                    if (currentTrack.lyrics != null) {
+                        showLyrics = !showLyrics
+                    }
+                },
+                modifier = Modifier.size(40.dp)
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Lyrics,
                     contentDescription = "Lyrics",
-                    tint = Color.LightGray,
+                    tint = if (showLyrics && currentTrack.lyrics != null) Color.White else if (currentTrack.lyrics != null) Color.LightGray else Color.Gray,
                     modifier = Modifier.size(22.dp)
                 )
             }

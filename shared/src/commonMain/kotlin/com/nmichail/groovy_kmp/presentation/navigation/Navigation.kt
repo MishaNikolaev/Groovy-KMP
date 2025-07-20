@@ -28,6 +28,9 @@ import kotlinx.coroutines.launch
 import org.koin.mp.KoinPlatform.getKoin
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
+import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
+import com.nmichail.groovy_kmp.presentation.screen.player.lyrics.LyricsScreen
+import moe.tlaster.precompose.navigation.path
 
 @Composable
 fun Navigation() {
@@ -111,6 +114,7 @@ private fun MainSection(
     userSession: UserSession?,
     onLogout: () -> Unit
 ) {
+    val navigator = rememberNavigator()
     val playerViewModel = remember { getKoin().get<com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel>() }
     val playerInfo by playerViewModel.playerInfo.collectAsState()
     val currentTrack = playerInfo.track
@@ -119,6 +123,7 @@ private fun MainSection(
         playerInfo.progress.currentPosition.toFloat() / playerInfo.progress.totalDuration
     } else 0f
     var showFullPlayer by rememberSaveable { mutableStateOf(false) }
+    var showLyrics by rememberSaveable { mutableStateOf(false) }
     var albumIdForReturn by rememberSaveable { mutableStateOf<String?>(null) }
     var lastAlbumScreen: (() -> Unit)? = null
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
