@@ -36,7 +36,12 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.RepeatMode as AnimationRepeatMode
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.ui.draw.alpha
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
 import com.nmichail.groovy_kmp.domain.models.RepeatMode as PlayerRepeatMode
+import com.nmichail.groovy_kmp.presentation.screen.player.VideoPlayer
+import org.koin.mp.KoinPlatform.getKoin
+import kotlin.time.TimeSource
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -62,13 +67,15 @@ fun FullPlayerScreen(
 
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
-        animationSpec = androidx.compose.animation.core.tween(100)
+        animationSpec =  tween(100)
     )
 
     var isDragging by remember { mutableStateOf(false) }
     var dragProgress by remember { mutableStateOf(progress) }
     var lastSeekProgress by remember { mutableStateOf<Float?>(null) }
     var showLyrics by remember { mutableStateOf(false) }
+    var showVideo by remember { mutableStateOf(false) }
+    var lastUserInteraction by remember { mutableStateOf(TimeSource.Monotonic.markNow()) }
 
     LaunchedEffect(progress) {
         if (lastSeekProgress != null && kotlin.math.abs(progress - lastSeekProgress!!) < 0.01f) {
@@ -80,7 +87,19 @@ fun FullPlayerScreen(
         }
     }
 
-    val albumViewModel = remember { org.koin.mp.KoinPlatform.getKoin().get<com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel>() }
+    fun resetUserInteraction() { lastUserInteraction = TimeSource.Monotonic.markNow() }
+
+    LaunchedEffect(lastUserInteraction, currentTrack?.id, playerState) {
+        showVideo = false
+        if (currentTrack?.videoUrl != null && playerState is PlayerState.Playing) {
+            delay(5000)
+            if (lastUserInteraction.elapsedNow().inWholeMilliseconds >= 5000 && playerState is PlayerState.Playing) {
+                showVideo = true
+            }
+        }
+    }
+
+    val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val albumColor = remember(currentTrack?.coverColor, currentTrack?.albumId) {
         currentTrack?.coverColor?.let { Color(it) }
             ?: albumViewModel.getAlbumCoverColor(currentTrack?.albumId)
@@ -90,146 +109,136 @@ fun FullPlayerScreen(
     val artistPhotoUrl = currentAlbum?.artistPhotoUrl
 
     val scrollState = rememberScrollState()
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(albumColor)
-            .padding(16.dp)
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { onBackToAlbumClick?.invoke() ?: onBackClick() }) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White
-                )
-            }
-            Text(
-                text = "Now Playing",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Medium,
-                    color = Color.White
-                )
-            )
-            IconButton(onClick = { /* TODO: More options */ }) {
-                Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    contentDescription = "More",
-                    tint = Color.White
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        Box(
-            modifier = Modifier
-                .size(270.dp)
-                .clip(RoundedCornerShape(18.dp))
-        ) {
-            if (showLyrics && currentTrack.lyrics != null) {
-                val lyrics = currentTrack.lyrics.lines
-                val infiniteTransition = rememberInfiniteTransition()
-                val animatedAlpha by infiniteTransition.animateFloat(
-                    initialValue = 0.4f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(700, easing = LinearEasing),
-                        repeatMode = AnimationRepeatMode.Reverse
-                    )
-                )
-                val maxTime = lyrics.filter { it.timeMs <= currentPosition }.maxOfOrNull { it.timeMs } ?: 0L
-                val activeIndices = lyrics.withIndex().filter { it.value.timeMs == maxTime }.map { it.index }
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    val centerIndex = activeIndices.firstOrNull() ?: 0
-                    val visibleLines = (-1..1).map { offset -> centerIndex + offset }
-                    visibleLines.forEach { idx ->
-                        val line = lyrics.getOrNull(idx)
-                        if (line != null) {
-                            val isActive = idx in activeIndices
-                            val isDots = line.text.trim().replace(" ", "").replace("…", ".").all { it == '.' }
-                            println("[LYRICS] line='${line.text}' isActive=$isActive isDots=$isDots")
-                            Text(
-                                text = line.text,
-                                fontFamily = AlbumFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = when {
-                                    isActive && isDots -> 80.sp
-                                    isActive -> 32.sp
-                                    else -> 22.sp
-                                },
-                                color = if (isActive) Color.White else Color.White.copy(alpha = 0.4f),
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .padding(vertical = 2.dp)
-                                    .alpha(if (isActive && isDots) animatedAlpha else 1f)
-                            )
-                        }
-                    }
-                }
-            } else {
-                PlatformImage(
-                    url = currentTrack.coverUrl,
-                    contentDescription = currentTrack.title,
-                    modifier = Modifier.fillMaxSize(),
-                    onColorExtracted = { color ->
-                        currentTrack.albumId?.let {
-                            println("[FullPlayerScreen] setAlbumColor for albumId=$it color=$color")
-                            albumViewModel.setAlbumColor(it, color)
-                        }
-                    }
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(20.dp))
-        Text(
-            text = currentTrack.title ?: "",
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 26.sp,
-                color = Color.White.copy(alpha = 0.85f),
-                fontFamily = AlbumFontFamily
-            ),
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.basicMarquee()
-        )
-        Spacer(modifier = Modifier.height(10.dp))
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 48.dp)
-                .clickable(enabled = !currentTrack.artist.isNullOrBlank()) { /* TODO: обработка клика по артисту */ },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Слой 1: Фон (Видео или Цвет)
+        if (showVideo && currentTrack.videoUrl != null) {
+            VideoPlayer(
+                uri = currentTrack.videoUrl,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
+                    .fillMaxSize()
+                    .background(albumColor)
+            )
+        }
+
+        // Слой 2: Интерфейс плеера
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                PlatformImage(
-                    url = artistPhotoUrl,
-                    contentDescription = currentTrack.artist,
-                    modifier = Modifier.fillMaxSize()
+                IconButton(onClick = {
+                    resetUserInteraction()
+                    onBackToAlbumClick?.invoke() ?: onBackClick()
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White
+                    )
+                }
+                Text(
+                    text = "Now Playing",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White
+                    )
                 )
+                IconButton(onClick = { resetUserInteraction() /* TODO: More options */ }) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "More",
+                        tint = Color.White
+                    )
+                }
             }
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(270.dp)
+                    .clip(RoundedCornerShape(18.dp))
+            ) {
+                if (!showVideo) {
+                    if (showLyrics && currentTrack.lyrics != null) {
+                        val lyrics = currentTrack.lyrics.lines
+                        val infiniteTransition = rememberInfiniteTransition()
+                        val animatedAlpha by infiniteTransition.animateFloat(
+                            initialValue = 0.4f,
+                            targetValue = 1f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(700, easing = LinearEasing),
+                                repeatMode = AnimationRepeatMode.Reverse
+                            )
+                        )
+                        val maxTime = lyrics.filter { it.timeMs <= currentPosition }.maxOfOrNull { it.timeMs } ?: 0L
+                        val activeIndices = lyrics.withIndex().filter { it.value.timeMs == maxTime }.map { it.index }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            val centerIndex = activeIndices.firstOrNull() ?: 0
+                            val visibleLines = (-1..1).map { offset -> centerIndex + offset }
+                            visibleLines.forEach { idx ->
+                                val line = lyrics.getOrNull(idx)
+                                if (line != null) {
+                                    val isActive = idx in activeIndices
+                                    val isDots = line.text.trim().replace(" ", "").replace("…", ".").all { it == '.' }
+                                    println("[LYRICS] line='${line.text}' isActive=$isActive isDots=$isDots")
+                                    Text(
+                                        text = line.text,
+                                        fontFamily = AlbumFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = when {
+                                            isActive && isDots -> 80.sp
+                                            isActive -> 32.sp
+                                            else -> 22.sp
+                                        },
+                                        color = if (isActive) Color.White else Color.White.copy(alpha = 0.4f),
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier
+                                            .padding(vertical = 2.dp)
+                                            .alpha(if (isActive && isDots) animatedAlpha else 1f)
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        PlatformImage(
+                            url = currentTrack.coverUrl,
+                            contentDescription = currentTrack.title,
+                            modifier = Modifier.fillMaxSize(),
+                            onColorExtracted = { color ->
+                                currentTrack.albumId?.let {
+                                    albumViewModel.setAlbumColor(it, color)
+                                }
+                            }
+                        )
+                    }
+                }
+                // Если видео играет, этот блок остается пустым,
+                // так как видео находится на фоновом слое.
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = currentTrack.artist ?: "",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 16.sp,
+                text = currentTrack.title ?: "",
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 26.sp,
+                    color = Color.White.copy(alpha = 0.85f),
                     fontFamily = AlbumFontFamily
                 ),
                 textAlign = TextAlign.Center,
@@ -237,165 +246,218 @@ fun FullPlayerScreen(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.basicMarquee()
             )
-        }
-        Spacer(modifier = Modifier.height(22.dp))
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Spacer(modifier = Modifier.height(12.dp))
-            Slider(
-                value = if (isDragging) dragProgress else progress,
-                onValueChange = { newProgress ->
-                    isDragging = true
-                    dragProgress = newProgress
-                },
-                onValueChangeFinished = {
-                    lastSeekProgress = dragProgress
-                    onSeek(dragProgress)
-                },
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(4.dp),
-                colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = Color.White,
-                    inactiveTrackColor = Color.White.copy(alpha = 0.25f)
-                ),
-                thumb = {
-                    Box(
-                        Modifier
-                            .size(8.dp)
-                            .offset(y = 6.dp, x = 4.dp)
-                            .background(Color.White, shape = CircleShape)
+                    .padding(horizontal = 48.dp)
+                    .clickable(enabled = !currentTrack.artist.isNullOrBlank()) { resetUserInteraction() /* TODO: обработка клика по артисту */ },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                ) {
+                    PlatformImage(
+                        url = artistPhotoUrl,
+                        contentDescription = currentTrack.artist,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            val displayedPosition = if (isDragging) {
-                (dragProgress * duration).toLong()
-            } else {
-                currentPosition
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = currentTrack.artist ?: "",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 16.sp,
+                        fontFamily = AlbumFontFamily
+                    ),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.basicMarquee()
+                )
             }
+            Spacer(modifier = Modifier.height(22.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Slider(
+                    value = if (isDragging) dragProgress else progress,
+                    onValueChange = { newProgress ->
+                        resetUserInteraction()
+                        isDragging = true
+                        dragProgress = newProgress
+                    },
+                    onValueChangeFinished = {
+                        resetUserInteraction()
+                        lastSeekProgress = dragProgress
+                        onSeek(dragProgress)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp),
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.White,
+                        activeTrackColor = Color.White,
+                        inactiveTrackColor = Color.White.copy(alpha = 0.25f)
+                    ),
+                    thumb = {
+                        Box(
+                            Modifier
+                                .size(8.dp)
+                                .offset(y = 6.dp, x = 4.dp)
+                                .background(Color.White, shape = CircleShape)
+                        )
+                    }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                val displayedPosition = if (isDragging) {
+                    (dragProgress * duration).toLong()
+                } else {
+                    currentPosition
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = formatTime(displayedPosition),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = Color.White
+                        )
+                    )
+                    Text(
+                        text = formatTime(duration),
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = Color.White
+                        )
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = formatTime(displayedPosition),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.White
+                IconButton(onClick = {
+                    resetUserInteraction()
+                    onPreviousClick()
+                }, modifier = Modifier.size(64.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.SkipPrevious,
+                        contentDescription = "Previous",
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
                     )
-                )
-                Text(
-                    text = formatTime(duration),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.White
+                }
+                IconButton(
+                    onClick = {
+                        resetUserInteraction()
+                        onPlayPauseClick()
+                    },
+                    modifier = Modifier
+                        .size(80.dp)
+                        .background(
+                            color = Color.White,
+                            shape = CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = if (playerState is PlayerState.Playing) {
+                            Icons.Filled.Pause
+                        } else {
+                            Icons.Filled.PlayArrow
+                        },
+                        contentDescription = if (playerState is PlayerState.Playing) "Pause" else "Play",
+                        tint = Color.Black,
+                        modifier = Modifier.size(48.dp)
                     )
-                )
+                }
+                IconButton(onClick = {
+                    resetUserInteraction()
+                    onNextClick()
+                }, modifier = Modifier.size(64.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.SkipNext,
+                        contentDescription = "Next",
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
             }
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onPreviousClick, modifier = Modifier.size(64.dp)) {
-                Icon(
-                    imageVector = Icons.Filled.SkipPrevious,
-                    contentDescription = "Previous",
-                    tint = Color.White,
-                    modifier = Modifier.size(40.dp)
-                )
-            }
-            IconButton(
-                onClick = onPlayPauseClick,
+            Spacer(modifier = Modifier.weight(1f))
+            Row(
                 modifier = Modifier
-                    .size(80.dp)
-                    .background(
-                        color = Color.White,
-                        shape = CircleShape
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = {
+                    resetUserInteraction()
+                    onRepeatClick()
+                }, modifier = Modifier.size(40.dp)) {
+                    Icon(
+                        imageVector = when (repeatMode) {
+                            PlayerRepeatMode.None -> Icons.Filled.Repeat
+                            PlayerRepeatMode.One -> Icons.Filled.RepeatOne
+                            PlayerRepeatMode.All -> Icons.Filled.Repeat
+                            else -> Icons.Filled.Repeat
+                        },
+                        contentDescription = "Repeat",
+                        tint = Color.LightGray,
+                        modifier = Modifier.size(22.dp)
                     )
-            ) {
-                Icon(
-                    imageVector = if (playerState is PlayerState.Playing) {
-                        Icons.Filled.Pause
-                    } else {
-                        Icons.Filled.PlayArrow
+                }
+                IconButton(onClick = { resetUserInteraction() /* TODO: Playlist */ }, modifier = Modifier.size(40.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.PlaylistAdd,
+                        contentDescription = "Add to Playlist",
+                        tint = Color.LightGray,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        resetUserInteraction()
+                        if (currentTrack.lyrics != null) {
+                            showLyrics = !showLyrics
+                        }
                     },
-                    contentDescription = if (playerState is PlayerState.Playing) "Pause" else "Play",
-                    tint = Color.Black,
-                    modifier = Modifier.size(48.dp)
-                )
-            }
-            IconButton(onClick = onNextClick, modifier = Modifier.size(64.dp)) {
-                Icon(
-                    imageVector = Icons.Filled.SkipNext,
-                    contentDescription = "Next",
-                    tint = Color.White,
                     modifier = Modifier.size(40.dp)
-                )
-            }
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 24.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onRepeatClick, modifier = Modifier.size(40.dp)) {
-                Icon(
-                    imageVector = when (repeatMode) {
-                        PlayerRepeatMode.None -> Icons.Filled.Repeat
-                        PlayerRepeatMode.One -> Icons.Filled.RepeatOne
-                        PlayerRepeatMode.All -> Icons.Filled.Repeat
-                        else -> Icons.Filled.Repeat
-                    },
-                    contentDescription = "Repeat",
-                    tint = Color.LightGray,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-            IconButton(onClick = { /* TODO: Playlist */ }, modifier = Modifier.size(40.dp)) {
-                Icon(
-                    imageVector = Icons.Filled.PlaylistAdd,
-                    contentDescription = "Add to Playlist",
-                    tint = Color.LightGray,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-            IconButton(
-                onClick = {
-                    if (currentTrack.lyrics != null) {
-                        showLyrics = !showLyrics
-                    }
-                },
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Lyrics,
-                    contentDescription = "Lyrics",
-                    tint = if (showLyrics && currentTrack.lyrics != null) Color.White else if (currentTrack.lyrics != null) Color.LightGray else Color.Gray,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-            IconButton(onClick = { /* TODO: Timer */ }, modifier = Modifier.size(40.dp)) {
-                Icon(
-                    imageVector = Icons.Filled.Shuffle,
-                    contentDescription = "Shuffle",
-                    tint = Color.LightGray,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-            IconButton(onClick = onShuffleClick, modifier = Modifier.size(40.dp)) {
-                Icon(
-                    imageVector = Icons.Filled.FavoriteBorder,
-                    contentDescription = "FavoriteBorder",
-                    tint = Color.LightGray,
-                    modifier = Modifier.size(22.dp)
-                )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Lyrics,
+                        contentDescription = "Lyrics",
+                        tint = if (showLyrics && currentTrack.lyrics != null) Color.White else if (currentTrack.lyrics != null) Color.LightGray else Color.Gray,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                IconButton(onClick = { resetUserInteraction() /* TODO: Timer */ }, modifier = Modifier.size(40.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.Shuffle,
+                        contentDescription = "Shuffle",
+                        tint = Color.LightGray,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                IconButton(onClick = {
+                    resetUserInteraction()
+                    onShuffleClick()
+                }, modifier = Modifier.size(40.dp)) {
+                    Icon(
+                        imageVector = Icons.Filled.FavoriteBorder,
+                        contentDescription = "FavoriteBorder",
+                        tint = Color.LightGray,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
         }
     }

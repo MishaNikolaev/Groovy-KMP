@@ -76,6 +76,11 @@ kotlin {
         }
         val androidMain by getting {
             dependencies {
+
+                //ExoPlayer
+                implementation("androidx.media3:media3-exoplayer:1.2.1")
+                implementation("androidx.media3:media3-ui:1.2.1")
+
                 implementation("io.coil-kt:coil-compose:2.4.0")
                 implementation("io.ktor:ktor-client-okhttp:2.3.7")
                 implementation("androidx.room:room-runtime:2.6.1")

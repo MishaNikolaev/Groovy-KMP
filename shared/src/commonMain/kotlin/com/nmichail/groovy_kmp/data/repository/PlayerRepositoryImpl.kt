@@ -230,7 +230,7 @@ class PlayerRepositoryImpl : PlayerRepository {
                 } else {
                     if (_playerInfo.value.state is PlayerState.Playing) {
                         println("[PlayerRepositoryImpl] handleTrackCompletion: calling pause() at end of playlist")
-                        pause()
+                    pause()
                     }
                 }
             }
