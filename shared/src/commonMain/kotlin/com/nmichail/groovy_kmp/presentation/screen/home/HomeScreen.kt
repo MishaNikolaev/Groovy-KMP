@@ -1,41 +1,34 @@
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import groovy_kmp.shared.generated.resources.Res
-import groovy_kmp.shared.generated.resources.queen_example
-import groovy_kmp.shared.generated.resources.wham_example
-import org.jetbrains.compose.resources.painterResource
-import androidx.compose.foundation.rememberScrollState
+import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
+import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumUi
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumsSection
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AllAlbumsScreen
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.ArtistsSection
-import androidx.compose.foundation.verticalScroll
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Playlists.PlaylistUi
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Playlists.PlaylistsSection
-import groovy_kmp.shared.generated.resources.playlist_example
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Playlists_Liked_Heard.PlaylistsLikedHeard
-
-import androidx.compose.runtime.LaunchedEffect
 import com.nmichail.groovy_kmp.presentation.screen.home.components.neuromusic.GenresCarousel
-import groovy_kmp.shared.generated.resources.logo_groovy_vou
-import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
-import org.koin.mp.KoinPlatform.getKoin
-import androidx.compose.runtime.*
-import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen
-import androidx.compose.runtime.saveable.rememberSaveable
-import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
-import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AllAlbumsScreen
+import groovy_kmp.shared.generated.resources.*
 import moe.tlaster.precompose.navigation.BackHandler
+import org.jetbrains.compose.resources.painterResource
+import org.koin.mp.KoinPlatform.getKoin
 
 @Composable
 fun HomeScreen() {

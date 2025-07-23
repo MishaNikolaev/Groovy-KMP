@@ -6,15 +6,11 @@ import com.nmichail.groovy_kmp.domain.models.PlayerInfo
 import com.nmichail.groovy_kmp.domain.models.PlayerState
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.usecases.PlayerUseCases
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 
 class PlayerViewModel(
     private val playerUseCases: PlayerUseCases,
@@ -70,7 +66,6 @@ class PlayerViewModel(
             val playlist = playerInfo.playlist
             val index = playlist.indexOfFirst { it.id == playerInfo.track?.id }
             musicServiceController.seekTo(playlist, if (index == -1) 0 else index, newPosition)
-            // Also update repository state to keep UI in sync
             viewModelScope.launch {
                 playerUseCases.seekTo(newPosition)
             }

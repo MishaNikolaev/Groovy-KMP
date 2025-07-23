@@ -1,15 +1,16 @@
 package com.nmichail.groovy_kmp.presentation.screen.player
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,12 +24,8 @@ import androidx.compose.ui.unit.sp
 import com.nmichail.groovy_kmp.domain.models.PlayerState
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import org.koin.mp.KoinPlatform.getKoin
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
-import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
-import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.generateAlbumColor
+import org.koin.mp.KoinPlatform.getKoin
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -175,37 +172,3 @@ fun PlayerBar(
         }
     }
 }
-
-@Composable
-fun DraggablePlayerBar(
-    currentTrack: Track?,
-    playerState: PlayerState,
-    progress: Float,
-    onPlayerBarClick: () -> Unit,
-    onPlayPauseClick: () -> Unit,
-    onNextClick: () -> Unit,
-    onPreviousClick: () -> Unit,
-    onTrackProgressChanged: (Float) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var isDragging by remember { mutableStateOf(false) }
-    var dragProgress by remember { mutableStateOf(progress) }
-    
-    LaunchedEffect(progress) {
-        if (!isDragging) {
-            dragProgress = progress
-        }
-    }
-    
-    PlayerBar(
-        currentTrack = currentTrack,
-        playerState = playerState,
-        progress = if (isDragging) dragProgress else progress,
-        onPlayerBarClick = onPlayerBarClick,
-        onPlayPauseClick = onPlayPauseClick,
-        onNextClick = onNextClick,
-        onPreviousClick = onPreviousClick,
-        onTrackProgressChanged = onTrackProgressChanged,
-        modifier = modifier
-    )
-} 

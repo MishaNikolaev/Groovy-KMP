@@ -5,13 +5,9 @@ import com.nmichail.groovy_kmp.domain.models.Album
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
 import com.nmichail.groovy_kmp.domain.repository.TrackRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class HomeViewModel(
     private val albumRepository: AlbumRepository,

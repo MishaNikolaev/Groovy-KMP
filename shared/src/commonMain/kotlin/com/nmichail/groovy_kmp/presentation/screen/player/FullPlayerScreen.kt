@@ -111,7 +111,6 @@ fun FullPlayerScreen(
     val scrollState = rememberScrollState()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Слой 1: Фон (Видео или Цвет)
         if (showVideo && currentTrack.videoUrl != null) {
             VideoPlayer(
                 uri = currentTrack.videoUrl,
@@ -125,7 +124,6 @@ fun FullPlayerScreen(
             )
         }
 
-        // Слой 2: Интерфейс плеера
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -170,66 +168,62 @@ fun FullPlayerScreen(
                     .size(270.dp)
                     .clip(RoundedCornerShape(18.dp))
             ) {
-                if (!showVideo) {
-                    if (showLyrics && currentTrack.lyrics != null) {
-                        val lyrics = currentTrack.lyrics.lines
-                        val infiniteTransition = rememberInfiniteTransition()
-                        val animatedAlpha by infiniteTransition.animateFloat(
-                            initialValue = 0.4f,
-                            targetValue = 1f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(700, easing = LinearEasing),
-                                repeatMode = AnimationRepeatMode.Reverse
-                            )
+                if (showLyrics && currentTrack.lyrics != null) {
+                    val lyrics = currentTrack.lyrics.lines
+                    val infiniteTransition = rememberInfiniteTransition()
+                    val animatedAlpha by infiniteTransition.animateFloat(
+                        initialValue = 0.4f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(700, easing = LinearEasing),
+                            repeatMode = AnimationRepeatMode.Reverse
                         )
-                        val maxTime = lyrics.filter { it.timeMs <= currentPosition }.maxOfOrNull { it.timeMs } ?: 0L
-                        val activeIndices = lyrics.withIndex().filter { it.value.timeMs == maxTime }.map { it.index }
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            val centerIndex = activeIndices.firstOrNull() ?: 0
-                            val visibleLines = (-1..1).map { offset -> centerIndex + offset }
-                            visibleLines.forEach { idx ->
-                                val line = lyrics.getOrNull(idx)
-                                if (line != null) {
-                                    val isActive = idx in activeIndices
-                                    val isDots = line.text.trim().replace(" ", "").replace("…", ".").all { it == '.' }
-                                    println("[LYRICS] line='${line.text}' isActive=$isActive isDots=$isDots")
-                                    Text(
-                                        text = line.text,
-                                        fontFamily = AlbumFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = when {
-                                            isActive && isDots -> 80.sp
-                                            isActive -> 32.sp
-                                            else -> 22.sp
-                                        },
-                                        color = if (isActive) Color.White else Color.White.copy(alpha = 0.4f),
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier
-                                            .padding(vertical = 2.dp)
-                                            .alpha(if (isActive && isDots) animatedAlpha else 1f)
-                                    )
-                                }
+                    )
+                    val maxTime = lyrics.filter { it.timeMs <= currentPosition }.maxOfOrNull { it.timeMs } ?: 0L
+                    val activeIndices = lyrics.withIndex().filter { it.value.timeMs == maxTime }.map { it.index }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        val centerIndex = activeIndices.firstOrNull() ?: 0
+                        val visibleLines = (-1..1).map { offset -> centerIndex + offset }
+                        visibleLines.forEach { idx ->
+                            val line = lyrics.getOrNull(idx)
+                            if (line != null) {
+                                val isActive = idx in activeIndices
+                                val isDots = line.text.trim().replace(" ", "").replace("…", ".").all { it == '.' }
+                                println("[LYRICS] line='${line.text}' isActive=$isActive isDots=$isDots")
+                                Text(
+                                    text = line.text,
+                                    fontFamily = AlbumFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = when {
+                                        isActive && isDots -> 80.sp
+                                        isActive -> 32.sp
+                                        else -> 22.sp
+                                    },
+                                    color = if (isActive) Color.White else Color.White.copy(alpha = 0.4f),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .padding(vertical = 2.dp)
+                                        .alpha(if (isActive && isDots) animatedAlpha else 1f)
+                                )
                             }
                         }
-                    } else {
-                        PlatformImage(
-                            url = currentTrack.coverUrl,
-                            contentDescription = currentTrack.title,
-                            modifier = Modifier.fillMaxSize(),
-                            onColorExtracted = { color ->
-                                currentTrack.albumId?.let {
-                                    albumViewModel.setAlbumColor(it, color)
-                                }
-                            }
-                        )
                     }
+                } else if (!showVideo) {
+                    PlatformImage(
+                        url = currentTrack.coverUrl,
+                        contentDescription = currentTrack.title,
+                        modifier = Modifier.fillMaxSize(),
+                        onColorExtracted = { color ->
+                            currentTrack.albumId?.let {
+                                albumViewModel.setAlbumColor(it, color)
+                            }
+                        }
+                    )
                 }
-                // Если видео играет, этот блок остается пустым,
-                // так как видео находится на фоновом слое.
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -399,10 +393,7 @@ fun FullPlayerScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = {
-                    resetUserInteraction()
-                    onRepeatClick()
-                }, modifier = Modifier.size(40.dp)) {
+                IconButton(onClick = { onRepeatClick() }, modifier = Modifier.size(40.dp)) {
                     Icon(
                         imageVector = when (repeatMode) {
                             PlayerRepeatMode.None -> Icons.Filled.Repeat
@@ -415,7 +406,7 @@ fun FullPlayerScreen(
                         modifier = Modifier.size(22.dp)
                     )
                 }
-                IconButton(onClick = { resetUserInteraction() /* TODO: Playlist */ }, modifier = Modifier.size(40.dp)) {
+                IconButton(onClick = { /* TODO: Playlist */ }, modifier = Modifier.size(40.dp)) {
                     Icon(
                         imageVector = Icons.Filled.PlaylistAdd,
                         contentDescription = "Add to Playlist",
@@ -425,7 +416,6 @@ fun FullPlayerScreen(
                 }
                 IconButton(
                     onClick = {
-                        resetUserInteraction()
                         if (currentTrack.lyrics != null) {
                             showLyrics = !showLyrics
                         }
@@ -439,7 +429,7 @@ fun FullPlayerScreen(
                         modifier = Modifier.size(22.dp)
                     )
                 }
-                IconButton(onClick = { resetUserInteraction() /* TODO: Timer */ }, modifier = Modifier.size(40.dp)) {
+                IconButton(onClick = { /* TODO: Timer */ }, modifier = Modifier.size(40.dp)) {
                     Icon(
                         imageVector = Icons.Filled.Shuffle,
                         contentDescription = "Shuffle",
@@ -447,10 +437,7 @@ fun FullPlayerScreen(
                         modifier = Modifier.size(22.dp)
                     )
                 }
-                IconButton(onClick = {
-                    resetUserInteraction()
-                    onShuffleClick()
-                }, modifier = Modifier.size(40.dp)) {
+                IconButton(onClick = { onShuffleClick() }, modifier = Modifier.size(40.dp)) {
                     Icon(
                         imageVector = Icons.Filled.FavoriteBorder,
                         contentDescription = "FavoriteBorder",

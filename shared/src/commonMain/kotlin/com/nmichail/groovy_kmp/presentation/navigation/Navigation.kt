@@ -2,35 +2,31 @@ package com.nmichail.groovy_kmp.presentation.navigation
 
 import HomeScreen
 import LoginViewModel
-import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import com.nmichail.groovy_kmp.presentation.screen.login.LoginScreen
-import com.nmichail.groovy_kmp.presentation.screen.register.RegisterScreen
-import com.nmichail.groovy_kmp.presentation.screen.search.SearchScreen
-import com.nmichail.groovy_kmp.presentation.screen.favourite.FavouriteScreen
-import com.nmichail.groovy_kmp.presentation.screen.profile.ProfileScreen
-import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
-import com.nmichail.groovy_kmp.data.manager.SessionManager
 import com.nmichail.groovy_kmp.data.local.model.UserSession
+import com.nmichail.groovy_kmp.data.manager.SessionManager
 import com.nmichail.groovy_kmp.domain.models.PlayerState
+import com.nmichail.groovy_kmp.presentation.screen.favourite.FavouriteScreen
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
+import com.nmichail.groovy_kmp.presentation.screen.login.LoginScreen
 import com.nmichail.groovy_kmp.presentation.screen.player.FullPlayerScreen
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerBar
-import moe.tlaster.precompose.navigation.NavHost
-import moe.tlaster.precompose.navigation.rememberNavigator
+import com.nmichail.groovy_kmp.presentation.screen.profile.ProfileScreen
+import com.nmichail.groovy_kmp.presentation.screen.register.RegisterScreen
+import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
+import com.nmichail.groovy_kmp.presentation.screen.search.SearchScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import moe.tlaster.precompose.navigation.NavHost
+import moe.tlaster.precompose.navigation.rememberNavigator
 import org.koin.mp.KoinPlatform.getKoin
-import androidx.compose.runtime.saveable.rememberSaveable
-import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
-import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
-import com.nmichail.groovy_kmp.presentation.screen.player.lyrics.LyricsScreen
-import moe.tlaster.precompose.navigation.path
 
 @Composable
 fun Navigation() {

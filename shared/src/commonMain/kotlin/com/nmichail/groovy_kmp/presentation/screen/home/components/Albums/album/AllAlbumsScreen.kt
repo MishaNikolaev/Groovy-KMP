@@ -17,15 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
-import org.koin.mp.KoinPlatform.getKoin
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.text.style.TextAlign
 import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
+import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumUi
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
+import org.koin.mp.KoinPlatform.getKoin
 
 @Composable
 fun AllAlbumsScreen(
