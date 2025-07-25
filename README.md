@@ -8,6 +8,7 @@ Now in progress.
     <img src="https://github.com/user-attachments/assets/08d1c8c7-ecfa-4567-960f-164547d4b2c3" width="200" style="object-fit: cover;" />
 </div>
 
+
 Now:
 - so many bugs in IOS version (especially from images)
 - more features still ain't working
