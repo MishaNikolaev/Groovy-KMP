@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
+import com.nmichail.groovy_kmp.presentation.screen.home.components.recent.RecentTracksScreen
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumUi
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumsSection
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen
@@ -29,6 +30,7 @@ import groovy_kmp.shared.generated.resources.*
 import moe.tlaster.precompose.navigation.BackHandler
 import org.jetbrains.compose.resources.painterResource
 import org.koin.mp.KoinPlatform.getKoin
+import com.nmichail.groovy_kmp.presentation.screen.home.components.recent.RecentTracksViewModel
 
 @Composable
 fun HomeScreen() {
@@ -36,6 +38,12 @@ fun HomeScreen() {
     val albums by viewModel.albums.collectAsState()
     var selectedAlbumId by rememberSaveable { mutableStateOf<String?>(null) }
     var showAllAlbums by rememberSaveable { mutableStateOf(false) }
+    var showHistoryScreen by rememberSaveable { mutableStateOf(false) }
+
+    val recentTracksViewModel = remember { getKoin().get<RecentTracksViewModel>() }
+    val recentTracks by recentTracksViewModel.tracks.collectAsState()
+    val lastPlayedTrack = recentTracks.firstOrNull()
+    LaunchedEffect(Unit) { recentTracksViewModel.load() }
 
     BackHandler(enabled = selectedAlbumId != null || showAllAlbums) {
         if (selectedAlbumId != null) {
@@ -45,7 +53,7 @@ fun HomeScreen() {
         }
     }
 
-    if (selectedAlbumId == null && !showAllAlbums) {
+    if (selectedAlbumId == null && !showAllAlbums && !showHistoryScreen) {
         LaunchedEffect(viewModel) {
             viewModel.load()
         }
@@ -93,7 +101,10 @@ fun HomeScreen() {
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            PlaylistsLikedHeard()
+            PlaylistsLikedHeard(
+                onHistoryClick = { showHistoryScreen = true },
+                lastPlayedTrack = lastPlayedTrack
+            )
             Spacer(modifier = Modifier.height(14.dp))
             AlbumsSection(
                 albums = albums.map { AlbumUi(it.title ?: "", it.artist ?: "", it.coverUrl, it.id) },
@@ -143,6 +154,8 @@ fun HomeScreen() {
             GenresCarousel()
             Spacer(modifier = Modifier.height(6.dp))
         }
+    } else if (showHistoryScreen) {
+        RecentTracksScreen(onBack = { showHistoryScreen = false })
     } else if (showAllAlbums) {
             AllAlbumsScreen(
             onBack = { showAllAlbums = false },

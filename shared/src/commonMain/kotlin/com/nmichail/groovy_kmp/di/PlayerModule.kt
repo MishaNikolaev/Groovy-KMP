@@ -6,6 +6,7 @@ import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.repository.PlayerRepository
 import com.nmichail.groovy_kmp.domain.usecases.*
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
+import com.nmichail.groovy_kmp.presentation.screen.home.components.recent.RecentTracksViewModel
 import org.koin.dsl.module
 
 val playerModule = module {
@@ -53,4 +54,5 @@ val playerModule = module {
         override fun seekTo(playlist: List<Track>, index: Int, position: Long) {}
     } }
     factory { PlayerViewModel(get(), get()) }
+    factory { RecentTracksViewModel(get()) }
 } 

@@ -14,15 +14,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 import groovy_kmp.shared.generated.resources.Res
 import groovy_kmp.shared.generated.resources.playlist_example
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 
 
 @Composable
-fun PlaylistsLikedHeard() {
+fun PlaylistsLikedHeard(
+    onHistoryClick: () -> Unit = {},
+    lastPlayedTrack: Track? = null
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -36,12 +45,17 @@ fun PlaylistsLikedHeard() {
             modifier = Modifier.weight(1f),
             onClick = { /* TODO */ }
         )
+        var localCoverColor by remember(lastPlayedTrack?.id) { mutableStateOf<Long?>(lastPlayedTrack?.coverColor) }
         PlaylistPreview(
             title = "History",
-            subtitle = "d4vd, Al Arifin",
-            cover = Res.drawable.playlist_example,
+            subtitle = lastPlayedTrack?.artist ?: "d4vd, Al Arifin",
+            coverUrl = lastPlayedTrack?.coverUrl,
+            coverColor = localCoverColor,
             modifier = Modifier.weight(1f),
-            onClick = { /* TODO */ }
+            onClick = onHistoryClick,
+            onColorExtracted = { color ->
+                if (localCoverColor == null) localCoverColor = color.value.toLong()
+            }
         )
     }
 }
@@ -50,9 +64,12 @@ fun PlaylistsLikedHeard() {
 fun PlaylistPreview(
     title: String,
     subtitle: String,
-    cover: DrawableResource,
+    cover: DrawableResource? = null,
+    coverUrl: String? = null,
+    coverColor: Long? = null,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onColorExtracted: ((Color) -> Unit)? = null
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -65,17 +82,29 @@ fun PlaylistPreview(
                 modifier = Modifier
                     .size(68.dp)
                     .clip(MaterialTheme.shapes.medium)
-                    .background(Color(0xFFE5BDBD))
+                    .background(coverColor?.let { Color(it) } ?: Color(0xFFE5BDBD))
                     .align(Alignment.BottomEnd)
             )
-            Image(
-                painter = painterResource(cover),
-                contentDescription = title,
-                modifier = Modifier
-                    .size(68.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .align(Alignment.TopStart)
-            )
+            if (coverUrl != null) {
+                PlatformImage(
+                    url = coverUrl,
+                    contentDescription = title,
+                    modifier = Modifier
+                        .size(68.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .align(Alignment.TopStart),
+                    onColorExtracted = onColorExtracted
+                )
+            } else if (cover != null) {
+                Image(
+                    painter = painterResource(cover),
+                    contentDescription = title,
+                    modifier = Modifier
+                        .size(68.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .align(Alignment.TopStart)
+                )
+            }
         }
         Spacer(modifier = Modifier.width(12.dp))
         Column(
