@@ -1,5 +1,6 @@
 It will be music player application with Ktor backend. 
 Now in progress. 
+
 **Preview**
 <div style="display: flex; gap: 10px;">
     <img src="https://github.com/user-attachments/assets/02c2204c-c607-4733-bda0-507689df7387" width="200" style="object-fit: cover;" />
