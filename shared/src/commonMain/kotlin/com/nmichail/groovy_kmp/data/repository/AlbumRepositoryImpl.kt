@@ -12,4 +12,5 @@ class AlbumRepositoryImpl(private val api: AlbumApi) : AlbumRepository {
     override suspend fun getAlbumsByGenre(genre: String): List<Album> = api.getAlbumsByGenre(genre)
     override suspend fun likeAlbum(id: String) = api.likeAlbum(id)
     override suspend fun unlikeAlbum(id: String) = api.unlikeAlbum(id)
+    override suspend fun getLikedAlbums(userId: String): List<Album> = api.getLikedAlbums(userId)
 } 

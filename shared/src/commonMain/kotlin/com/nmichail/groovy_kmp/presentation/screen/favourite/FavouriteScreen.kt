@@ -2,15 +2,19 @@ package com.nmichail.groovy_kmp.presentation.screen.favourite
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,24 +24,58 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.ArtistsSection
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
+import com.nmichail.groovy_kmp.domain.models.Track
+import com.nmichail.groovy_kmp.domain.models.Album
+import com.nmichail.groovy_kmp.data.local.TrackCache
+import com.nmichail.groovy_kmp.data.local.AlbumCache
+import com.nmichail.groovy_kmp.domain.repository.TrackRepository
+import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
+import org.koin.mp.KoinPlatform.getKoin
+import kotlinx.coroutines.launch
 import groovy_kmp.shared.generated.resources.*
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.zIndex
 
-@OptIn(ExperimentalResourceApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalResourceApi::class)
 @Composable
-fun FavouriteScreen() {
-    val onHeaderClick = { /* TODO: обработка клика по заголовку */ }
-    val tracks = listOf(
-        TrackUi("Электричка", "КИНО", Res.drawable.queen_example),
-        TrackUi("Here With Me", "d4vd", Res.drawable.avatar),
-        TrackUi("We Are The Champions", "Queen", Res.drawable.Queen_The_Miracle_example),
-        TrackUi("Another One Bites The Dust", "Queen", Res.drawable.queen_example),
-        TrackUi("Somebody to Love", "Queen", Res.drawable.queen_example),
-        TrackUi("This is a very long track title to demonstrate the marquee effect", "A-HA", Res.drawable.avatar)
-    )
-    val chunkedTracks = tracks.chunked(3)
-    val pagerState = rememberPagerState(pageCount = { chunkedTracks.size })
+fun FavouriteScreen(
+    onMyLikesClick: () -> Unit = {}
+) {
+    var likedTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
+    var likedAlbums by remember { mutableStateOf<List<Album>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    
+    val trackRepository = remember { getKoin().get<TrackRepository>() }
+    val albumRepository = remember { getKoin().get<AlbumRepository>() }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            try {
+                val cachedTracks = TrackCache.loadTracks()
+                val cachedAlbums = AlbumCache.loadAlbums()
+                
+                likedTracks = cachedTracks ?: emptyList()
+                likedAlbums = cachedAlbums ?: emptyList()
+                
+            } catch (e: Exception) {
+                likedTracks = emptyList()
+                likedAlbums = emptyList()
+            } finally {
+                isLoading = false
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -49,11 +87,12 @@ fun FavouriteScreen() {
         Spacer(modifier = Modifier.height(34.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clickable { onHeaderClick() }
+            modifier = Modifier.clickable { onMyLikesClick() }
         ) {
-            Image(
-                painter = painterResource(Res.drawable.like_profile),
+            Icon(
+                imageVector = Icons.Filled.Favorite,
                 contentDescription = "Heart",
+                tint = Color(0xFFE94057),
                 modifier = Modifier.size(56.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
@@ -79,7 +118,7 @@ fun FavouriteScreen() {
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "${tracks.size} tracks",
+                    text = "${likedTracks.size} tracks",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color.Gray,
                         fontSize = 16.sp
@@ -89,40 +128,119 @@ fun FavouriteScreen() {
         }
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (chunkedTracks.isEmpty()) {
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFFE94057))
+            }
+        } else if (likedTracks.isEmpty() && likedAlbums.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "You have no favourite tracks",
+                    text = "You have no favourite tracks or albums",
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color.Gray
                 )
             }
         } else {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(start = 0.dp, end = 40.dp),
-                pageSpacing = 16.dp
-            ) { page ->
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+            if (likedTracks.isNotEmpty()) {
+                Text(
+                    text = "Liked Tracks",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    ),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(horizontal = 0.dp)
                 ) {
-                    chunkedTracks[page].forEach { track ->
-                        TrackCard(track)
+                    val chunkedTracks = likedTracks.chunked(3)
+                    items(chunkedTracks.size) { columnIndex ->
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.width(280.dp)
+                        ) {
+                            chunkedTracks[columnIndex].forEach { track ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            val playerViewModel = getKoin().get<PlayerViewModel>()
+                                            coroutineScope.launch {
+                                                playerViewModel.setPlaylist(likedTracks, "Liked Tracks")
+                                                playerViewModel.play(likedTracks, track)
+                                            }
+                                        }
+                                        .padding(vertical = 8.dp, horizontal = 12.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(56.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color(0xFFF2F2F2)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        PlatformImage(
+                                            url = track.coverUrl,
+                                            contentDescription = track.title,
+                                            modifier = Modifier.fillMaxSize(),
+                                            onColorExtracted = null
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(
+                                            text = track.title ?: "",
+                                            style = MaterialTheme.typography.titleMedium.copy(
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = track.artist ?: "",
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                color = Color.Gray
+                                            ),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    IconButton(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                trackRepository.unlikeTrack(track.id!!)
+                                                likedTracks = likedTracks.filter { it.id != track.id }
+                                                TrackCache.saveTracks(likedTracks)
+                                            }
+                                        },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Favorite,
+                                            contentDescription = "Unlike",
+                                            tint = Color(0xFFE94057),
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
+                Spacer(modifier = Modifier.height(24.dp))
             }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
         }
 
         Spacer(modifier = Modifier.height(36.dp))
@@ -139,7 +257,7 @@ fun FavouriteScreen() {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { /* TODO: обработка клика по плейлисту */ }
+                    .clickable { }
             ) {
                 Box(
                     modifier = Modifier.size(width = 80.dp, height = 76.dp)
@@ -183,7 +301,7 @@ fun FavouriteScreen() {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { /* TODO: обработка клика по альбому */ }
+                    .clickable { }
             ) {
                 Box(
                     modifier = Modifier.size(width = 80.dp, height = 76.dp)
@@ -233,9 +351,127 @@ fun FavouriteScreen() {
                 Pair("Wham", Res.drawable.wham_example),
                 Pair("Queen", Res.drawable.queen_example)
             ),
-            onArtistClick = { /* TODO */ },
-            onViewAllClick = { /* TODO */ }
+            onArtistClick = { },
+            onViewAllClick = { }
         )
         Spacer(modifier = Modifier.height(18.dp))
+    }
+}
+
+@Composable
+fun LikedTrackRow(
+    track: Track,
+    onLikeClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clickable { /* TODO: play track */ }
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFFF2F2F2)),
+            contentAlignment = Alignment.Center
+        ) {
+            PlatformImage(
+                url = track.coverUrl,
+                contentDescription = track.title,
+                modifier = Modifier.fillMaxSize(),
+                onColorExtracted = null
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = track.title ?: "",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = track.artist ?: "",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.Gray
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        IconButton(onClick = onLikeClick) {
+            Icon(
+                imageVector = Icons.Filled.Favorite,
+                contentDescription = "Unlike",
+                tint = Color(0xFFE94057),
+                modifier = Modifier.size(28.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun LikedAlbumRow(
+    album: Album,
+    onLikeClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clickable { /* TODO: navigate to album */ }
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFFF2F2F2)),
+            contentAlignment = Alignment.Center
+        ) {
+            PlatformImage(
+                url = album.coverUrl,
+                contentDescription = album.title,
+                modifier = Modifier.fillMaxSize(),
+                onColorExtracted = null
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = album.title ?: "",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = album.artist ?: "",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.Gray
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        IconButton(onClick = onLikeClick) {
+            Icon(
+                imageVector = Icons.Filled.Favorite,
+                contentDescription = "Unlike",
+                tint = Color(0xFFE94057),
+                modifier = Modifier.size(28.dp)
+            )
+        }
     }
 }

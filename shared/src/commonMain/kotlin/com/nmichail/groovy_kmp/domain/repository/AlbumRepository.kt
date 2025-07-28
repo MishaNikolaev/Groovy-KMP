@@ -10,4 +10,5 @@ interface AlbumRepository {
     suspend fun getAlbumsByGenre(genre: String): List<Album>
     suspend fun likeAlbum(id: String)
     suspend fun unlikeAlbum(id: String)
+    suspend fun getLikedAlbums(userId: String): List<Album>
 } 

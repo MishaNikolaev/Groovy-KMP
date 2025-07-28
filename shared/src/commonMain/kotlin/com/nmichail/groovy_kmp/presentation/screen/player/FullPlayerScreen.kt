@@ -42,6 +42,8 @@ import com.nmichail.groovy_kmp.presentation.screen.player.VideoPlayer
 import org.koin.mp.KoinPlatform.getKoin
 import kotlin.time.TimeSource
 import kotlin.time.Duration.Companion.milliseconds
+import com.nmichail.groovy_kmp.data.local.TrackCache
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -109,6 +111,13 @@ fun FullPlayerScreen(
     val artistPhotoUrl = currentAlbum?.artistPhotoUrl
 
     val scrollState = rememberScrollState()
+    var isLiked by remember(currentTrack.id) { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(currentTrack.id) {
+        val cached = TrackCache.loadTracks() ?: emptyList()
+        isLiked = cached.any { it.id == currentTrack.id }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (showVideo && currentTrack.videoUrl != null) {
@@ -437,11 +446,31 @@ fun FullPlayerScreen(
                         modifier = Modifier.size(22.dp)
                     )
                 }
-                IconButton(onClick = { onShuffleClick() }, modifier = Modifier.size(40.dp)) {
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            val cached = TrackCache.loadTracks()?.toMutableList() ?: mutableListOf()
+                            if (!isLiked) {
+                                // Лайк: добавить трек в кэш если его нет
+                                if (currentTrack.id != null && cached.none { it.id == currentTrack.id }) {
+                                    cached.add(currentTrack)
+                                    TrackCache.saveTracks(cached)
+                                }
+                                isLiked = true
+                            } else {
+                                // Дизлайк: удалить трек из кэша
+                                val updated = cached.filter { it.id != currentTrack.id }
+                                TrackCache.saveTracks(updated)
+                                isLiked = false
+                            }
+                        }
+                    },
+                    modifier = Modifier.size(40.dp)
+                ) {
                     Icon(
-                        imageVector = Icons.Filled.FavoriteBorder,
-                        contentDescription = "FavoriteBorder",
-                        tint = Color.LightGray,
+                        imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                        contentDescription = if (isLiked) "Unlike" else "Like",
+                        tint = if (isLiked) Color.Red else Color.LightGray,
                         modifier = Modifier.size(22.dp)
                     )
                 }

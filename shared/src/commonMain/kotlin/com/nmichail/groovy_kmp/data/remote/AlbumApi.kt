@@ -31,4 +31,7 @@ class AlbumApi(private val client: HttpClient) {
     suspend fun unlikeAlbum(id: String) {
         client.delete("/albums/$id/like")
     }
+
+    suspend fun getLikedAlbums(userId: String): List<Album> =
+        client.get("/albums/liked/$userId").body()
 } 

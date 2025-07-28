@@ -13,6 +13,7 @@ import com.nmichail.groovy_kmp.data.local.model.UserSession
 import com.nmichail.groovy_kmp.data.manager.SessionManager
 import com.nmichail.groovy_kmp.domain.models.PlayerState
 import com.nmichail.groovy_kmp.presentation.screen.favourite.FavouriteScreen
+import com.nmichail.groovy_kmp.presentation.screen.favourite.MyLikesScreen
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
 import com.nmichail.groovy_kmp.presentation.screen.login.LoginScreen
 import com.nmichail.groovy_kmp.presentation.screen.player.FullPlayerScreen
@@ -121,6 +122,7 @@ private fun MainSection(
     var showFullPlayer by rememberSaveable { mutableStateOf(false) }
     var showLyrics by rememberSaveable { mutableStateOf(false) }
     var albumIdForReturn by rememberSaveable { mutableStateOf<String?>(null) }
+    var showMyLikes by rememberSaveable { mutableStateOf(false) }
     var lastAlbumScreen: (() -> Unit)? = null
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val backgroundColor = albumViewModel.getBackgroundColor()
@@ -274,7 +276,13 @@ private fun MainSection(
                 when (selectedTab) {
                     Screen.MainSection.Home -> HomeScreen()
                     Screen.MainSection.Search -> SearchScreen()
-                    Screen.MainSection.Favourite -> FavouriteScreen()
+                    Screen.MainSection.Favourite -> {
+                        if (showMyLikes) {
+                            MyLikesScreen(onBackClick = { showMyLikes = false })
+                        } else {
+                            FavouriteScreen(onMyLikesClick = { showMyLikes = true })
+                        }
+                    }
                     Screen.MainSection.Profile -> ProfileScreen(
                         email = userSession?.email,
                         username = userSession?.username,

@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -34,6 +35,9 @@ import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.Platfo
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
 import kotlinx.coroutines.launch
 import org.koin.mp.KoinPlatform.getKoin
+import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
+import com.nmichail.groovy_kmp.data.local.AlbumCache
+import com.nmichail.groovy_kmp.data.manager.SessionManager
 
 fun generateAlbumColor(url: String?): Color {
     val hash = (url ?: "").hashCode()
@@ -77,16 +81,26 @@ fun AlbumScreen(
     onLikeClick: () -> Unit,
     onPlayClick: () -> Unit,
     onPauseClick: () -> Unit,
-    onTrackClick: (trackId: String) -> Unit
+    onTrackClick: (trackId: String) -> Unit,
+    userId: String? = null
 ) {
     val playerViewModel = remember { getKoin().get<PlayerViewModel>() }
     val playerInfo by playerViewModel.playerInfo.collectAsState()
     val isPlaying = playerInfo.state is PlayerState.Playing
     val currentTrack = playerInfo.track
-    
+    val albumRepository = remember { getKoin().get<AlbumRepository>() }
+    var isAlbumLiked by remember(albumWithTracks.album.id) { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(albumWithTracks.album.id, userId) {
+        if (userId != null && albumWithTracks.album.id != null) {
+            val liked = albumRepository.getLikedAlbums(userId).any { it.id == albumWithTracks.album.id }
+            isAlbumLiked = liked
+        }
+    }
+
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val backgroundColor = albumViewModel.getBackgroundColor()
-    val coroutineScope = rememberCoroutineScope()
 
     val albumColor = remember(albumWithTracks.album.coverColor) {
         albumWithTracks.album.coverColor?.let { Color(it) } ?: Color(0xFFAAA287)
@@ -207,15 +221,43 @@ fun AlbumScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         IconButton(
-                            onClick = onLikeClick,
+                            onClick = {
+                                coroutineScope.launch {
+                                    if (!isAlbumLiked && albumWithTracks.album.id != null) {
+                                        albumRepository.likeAlbum(albumWithTracks.album.id)
+                                        // Обновить кэш после лайка
+                                        // TODO: Получить userId из сессии
+                                        val sessionManager = getKoin().get<SessionManager>()
+                                        val session = sessionManager.getSession()
+                                        val userId = session?.email // Используем email как userId
+                                        if (userId != null) {
+                                            val liked = albumRepository.getLikedAlbums(userId)
+                                            AlbumCache.saveAlbums(liked)
+                                        }
+                                        isAlbumLiked = true
+                                    } else if (isAlbumLiked && albumWithTracks.album.id != null) {
+                                        albumRepository.unlikeAlbum(albumWithTracks.album.id)
+                                        // Обновить кэш после дизлайка
+                                        // TODO: Получить userId из сессии
+                                        val sessionManager = getKoin().get<SessionManager>()
+                                        val session = sessionManager.getSession()
+                                        val userId = session?.email // Используем email как userId
+                                        if (userId != null) {
+                                            val liked = albumRepository.getLikedAlbums(userId)
+                                            AlbumCache.saveAlbums(liked)
+                                        }
+                                        isAlbumLiked = false
+                                    }
+                                }
+                            },
                             modifier = Modifier
                                 .size(64.dp)
                                 .background(Color(0x33AAAAAA), shape = CircleShape)
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.FavoriteBorder,
-                                contentDescription = "Like",
-                                tint = Color.White,
+                                imageVector = if (isAlbumLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                contentDescription = if (isAlbumLiked) "Unlike" else "Like",
+                                tint = if (isAlbumLiked) Color.Red else Color.White,
                                 modifier = Modifier.size(32.dp)
                             )
                         }
