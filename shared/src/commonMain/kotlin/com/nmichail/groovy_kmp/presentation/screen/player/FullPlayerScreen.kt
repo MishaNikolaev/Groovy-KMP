@@ -147,7 +147,7 @@ fun FullPlayerScreen(
             ) {
                 IconButton(onClick = {
                     resetUserInteraction()
-                    onBackToAlbumClick?.invoke() ?: onBackClick()
+                    onBackClick()
                 }) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBack,

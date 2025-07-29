@@ -125,6 +125,7 @@ private fun MainSection(
     var showMyLikes by rememberSaveable { mutableStateOf(false) }
     var showMyLikedAlbums by rememberSaveable { mutableStateOf(false) }
     var showFavouriteFromHome by rememberSaveable { mutableStateOf(false) }
+    var previousScreen by rememberSaveable { mutableStateOf<String?>(null) }
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val backgroundColor = albumViewModel.getBackgroundColor()
     var albumIdFromLikes by rememberSaveable { mutableStateOf<String?>(null) }
@@ -140,10 +141,34 @@ private fun MainSection(
             currentTrack = currentTrack,
             playerState = playerState,
             progress = progress,
-            onBackClick = { showFullPlayer = false },
+            onBackClick = { 
+                showFullPlayer = false
+                // Возвращаемся на предыдущий экран
+                previousScreen?.let { screen ->
+                    when (screen) {
+                        "home" -> {
+                            showFavouriteFromHome = false
+                            onTabSelected(Screen.MainSection.Home)
+                        }
+                        "favourite" -> {
+                            onTabSelected(Screen.MainSection.Favourite)
+                        }
+                        "search" -> {
+                            onTabSelected(Screen.MainSection.Search)
+                        }
+                        "profile" -> {
+                            onTabSelected(Screen.MainSection.Profile)
+                        }
+                        "album" -> {
+                        }
+                    }
+                }
+                previousScreen = null
+            },
             onBackToAlbumClick = {
                 albumIdForReturn = currentTrack.albumId
                 showFullPlayer = false
+                previousScreen = "album"
             },
             onPlayPauseClick = {
                 if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack) else playerViewModel.resume(playerInfo.playlist, currentTrack)
@@ -189,6 +214,7 @@ private fun MainSection(
                             playerState = playerState,
                             progress = progress,
                             onPlayerBarClick = {
+                                previousScreen = "album"
                                 showFullPlayer = true
                                 albumIdForReturn = null
                             },
@@ -245,6 +271,7 @@ private fun MainSection(
                             playerState = playerState,
                             progress = progress,
                             onPlayerBarClick = {
+                                previousScreen = "album"
                                 showFullPlayer = true
                                 albumIdFromLikes = null
                             },
@@ -295,7 +322,15 @@ private fun MainSection(
                             currentTrack = currentTrack,
                             playerState = playerState,
                             progress = progress,
-                            onPlayerBarClick = { showFullPlayer = true },
+                            onPlayerBarClick = { 
+                                previousScreen = when (selectedTab) {
+                                    Screen.MainSection.Home -> "home"
+                                    Screen.MainSection.Search -> "search"
+                                    Screen.MainSection.Favourite -> "favourite"
+                                    Screen.MainSection.Profile -> "profile"
+                                }
+                                showFullPlayer = true 
+                            },
                             onPlayPauseClick = {
                                 if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack!!) else playerViewModel.resume(playerInfo.playlist, currentTrack!!)
                             },
