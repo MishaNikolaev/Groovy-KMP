@@ -36,13 +36,26 @@ fun PlaylistsLikedHeard(
     var likedTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
     var likedAlbums by remember { mutableStateOf<List<Album>>(emptyList()) }
     var lastLikedAlbum by remember { mutableStateOf<Album?>(null) }
+    var lastPlayedTrackFromHistory by remember { mutableStateOf<Track?>(null) }
     
     LaunchedEffect(Unit) {
         val cachedTracks = TrackCache.loadTracks()
         val cachedAlbums = AlbumCache.loadAlbums()
+        val history = TrackCache.loadHistory()
+        
         likedTracks = cachedTracks ?: emptyList()
         likedAlbums = cachedAlbums ?: emptyList()
         lastLikedAlbum = likedAlbums.lastOrNull()
+        lastPlayedTrackFromHistory = history?.firstOrNull()
+        
+        println("[PlaylistLikedHeard] Loaded ${likedTracks.size} liked tracks, ${likedAlbums.size} liked albums, ${history?.size ?: 0} history tracks")
+        println("[PlaylistLikedHeard] Last played track: ${lastPlayedTrackFromHistory?.title}")
+        println("[PlaylistLikedHeard] Last played track coverColor: ${lastPlayedTrackFromHistory?.coverColor}")
+        println("[PlaylistLikedHeard] Last played track coverUrl: ${lastPlayedTrackFromHistory?.coverUrl}")
+        println("[PlaylistLikedHeard] History tracks details:")
+        history?.forEachIndexed { index, track ->
+            println("[PlaylistLikedHeard] Track $index: ${track.title}, coverColor: ${track.coverColor}, coverUrl: ${track.coverUrl}, playedAt: ${track.playedAt}")
+        }
     }
 
     Row(
@@ -59,16 +72,17 @@ fun PlaylistsLikedHeard(
             modifier = Modifier.weight(1f),
             onClick = onMyLikesClick
         )
-        var localCoverColor by remember(lastPlayedTrack?.id) { mutableStateOf<Long?>(lastPlayedTrack?.coverColor) }
+        var localCoverColor by remember(lastPlayedTrackFromHistory?.id) { mutableStateOf<Long?>(lastPlayedTrackFromHistory?.coverColor) }
         PlaylistPreview(
             title = "History",
-            subtitle = lastPlayedTrack?.artist ?: "d4vd, Al Arifin",
-            coverUrl = lastPlayedTrack?.coverUrl,
+            subtitle = lastPlayedTrackFromHistory?.artist ?: "No recent tracks",
+            coverUrl = lastPlayedTrackFromHistory?.coverUrl,
             coverColor = localCoverColor,
             modifier = Modifier.weight(1f),
             onClick = onHistoryClick,
             onColorExtracted = { color ->
-                if (localCoverColor == null) localCoverColor = color.value.toLong()
+                localCoverColor = color.value.toLong()
+                println("[PlaylistLikedHeard] Extracted color for history: ${color.value}")
             }
         )
     }
@@ -98,7 +112,13 @@ fun PlaylistPreview(
                     .clip(MaterialTheme.shapes.medium)
                     .background(coverColor?.let { Color(it) } ?: Color(0xFFE5BDBD))
                     .align(Alignment.BottomEnd)
-            )
+            ) {
+                if (coverColor != null) {
+                    println("[PlaylistPreview] Using coverColor: $coverColor for title: $title")
+                } else {
+                    println("[PlaylistPreview] No coverColor for title: $title, using default")
+                }
+            }
             if (coverUrl != null) {
                 PlatformImage(
                     url = coverUrl,

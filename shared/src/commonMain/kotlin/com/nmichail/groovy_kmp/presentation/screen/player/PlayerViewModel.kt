@@ -6,6 +6,7 @@ import com.nmichail.groovy_kmp.domain.models.PlayerInfo
 import com.nmichail.groovy_kmp.domain.models.PlayerState
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.usecases.PlayerUseCases
+import com.nmichail.groovy_kmp.data.local.TrackCache
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -75,7 +76,16 @@ class PlayerViewModel(
     fun play(playlist: List<Track>, track: Track) {
         val index = playlist.indexOfFirst { it.id == track.id }
         musicServiceController.play(playlist, if (index == -1) 0 else index)
-        viewModelScope.launch { playerUseCases.playTrack(track) }
+        viewModelScope.launch { 
+            playerUseCases.playTrack(track)
+            try {
+                val trackWithTimestamp = track.copy(playedAt = System.currentTimeMillis())
+                TrackCache.addToHistory(trackWithTimestamp)
+                println("[PlayerViewModel] Added track '${track.title}' to history at ${trackWithTimestamp.playedAt}")
+            } catch (e: Exception) {
+                println("[PlayerViewModel] Error adding track to history: ${e.message}")
+            }
+        }
     }
 
     fun pause(playlist: List<Track>, track: Track) {

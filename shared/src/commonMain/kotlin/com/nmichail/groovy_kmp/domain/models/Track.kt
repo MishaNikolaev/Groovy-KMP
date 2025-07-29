@@ -14,5 +14,6 @@ data class Track(
     val storagePath: String? = null,
     val coverColor: Long? = null,
     val lyrics: Lyrics? = null,
-    val videoUrl: String? = null
+    val videoUrl: String? = null,
+    val playedAt: Long? = null 
 )

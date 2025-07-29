@@ -54,5 +54,5 @@ val playerModule = module {
         override fun seekTo(playlist: List<Track>, index: Int, position: Long) {}
     } }
     factory { PlayerViewModel(get(), get()) }
-    factory { RecentTracksViewModel(get()) }
+    factory { RecentTracksViewModel() }
 } 

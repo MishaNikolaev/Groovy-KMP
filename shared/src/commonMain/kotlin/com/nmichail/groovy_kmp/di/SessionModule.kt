@@ -12,6 +12,7 @@ import com.nmichail.groovy_kmp.domain.repository.TrackRepository
 import com.nmichail.groovy_kmp.domain.usecases.GetAlbumWithTracksUseCase
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
 import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
+import com.nmichail.groovy_kmp.presentation.screen.home.components.recent.RecentTracksViewModel
 import org.koin.dsl.module
 
 val sessionModuleCommon = module {
@@ -23,5 +24,6 @@ val sessionModuleCommon = module {
     single<TrackRepository> { TrackRepositoryImpl(get()) }
     single { GetAlbumWithTracksUseCase(get(), get()) }
     single { AlbumViewModel(get()) }
+    single { RecentTracksViewModel() }
     factory { HomeViewModel(get(), get()) }
 } 

@@ -56,7 +56,9 @@ actual object AllAlbumsCache {
 
 actual object TrackCache {
     private const val CACHE_FILE = "tracks_cache.json"
+    private const val HISTORY_FILE = "tracks_history.json"
     private fun getCacheFile(): File = File(ApplicationContextHolder.context.filesDir, CACHE_FILE)
+    private fun getHistoryFile(): File = File(ApplicationContextHolder.context.filesDir, HISTORY_FILE)
 
     actual suspend fun saveTracks(tracks: List<Track>) {
         val json = Json.encodeToString(tracks)
@@ -71,6 +73,45 @@ actual object TrackCache {
             Json.decodeFromString(json)
         } catch (e: Exception) {
             null
+        }
+    }
+
+    actual suspend fun saveHistory(tracks: List<Track>) {
+        val json = Json.encodeToString(tracks)
+        getHistoryFile().writeText(json)
+    }
+
+    actual suspend fun loadHistory(): List<Track>? {
+        val file = getHistoryFile()
+        if (!file.exists()) return null
+        val json = file.readText()
+        return try {
+            Json.decodeFromString(json)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    actual suspend fun addToHistory(track: Track) {
+        try {
+            println("[TrackCache Android] Adding track to history: ${track.title}, playedAt: ${track.playedAt}")
+            val currentHistory = loadHistory()
+            println("[TrackCache Android] Current history size: ${currentHistory?.size ?: 0}")
+
+            // Удаляем трек из истории, если он уже есть (чтобы переместить в начало)
+            val filteredHistory = currentHistory?.filter { it.id != track.id } ?: emptyList()
+            println("[TrackCache Android] Filtered history size: ${filteredHistory.size}")
+
+            // Добавляем трек в начало истории
+            val newHistory = listOf(track) + filteredHistory
+            // Ограничиваем историю 50 треками
+            val limitedHistory = newHistory.take(50)
+            saveHistory(limitedHistory)
+
+            println("[TrackCache Android] Saved history with ${limitedHistory.size} tracks")
+        } catch (e: Exception) {
+            println("[TrackCache Android] Error adding track to history: ${e.message}")
+            e.printStackTrace()
         }
     }
 } 
