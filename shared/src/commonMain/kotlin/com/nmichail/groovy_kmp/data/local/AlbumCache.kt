@@ -11,6 +11,11 @@ expect object AlbumCache {
     suspend fun loadAlbums(): List<Album>?
 }
 
+expect object AllAlbumsCache {
+    suspend fun saveAllAlbums(albums: List<Album>)
+    suspend fun loadAllAlbums(): List<Album>?
+}
+
 expect object TrackCache {
     suspend fun saveTracks(tracks: List<Track>)
     suspend fun loadTracks(): List<Track>?

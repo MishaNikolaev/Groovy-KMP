@@ -33,6 +33,27 @@ actual object AlbumCache {
     }
 }
 
+actual object AllAlbumsCache {
+    private const val CACHE_FILE = "all_albums_cache.json"
+    private fun getCacheFile(): File = File(ApplicationContextHolder.context.filesDir, CACHE_FILE)
+
+    actual suspend fun saveAllAlbums(albums: List<Album>) {
+        val json = Json.encodeToString(albums)
+        getCacheFile().writeText(json)
+    }
+
+    actual suspend fun loadAllAlbums(): List<Album>? {
+        val file = getCacheFile()
+        if (!file.exists()) return null
+        val json = file.readText()
+        return try {
+            Json.decodeFromString(json)
+        } catch (e: Exception) {
+            null
+        }
+    }
+}
+
 actual object TrackCache {
     private const val CACHE_FILE = "tracks_cache.json"
     private fun getCacheFile(): File = File(ApplicationContextHolder.context.filesDir, CACHE_FILE)

@@ -36,18 +36,26 @@ class AlbumViewModel(
         
         viewModelScope.launch {
             try {
+                println("[AlbumViewModel] Loading album with id: $albumId")
                 val albumWithTracks = getAlbumWithTracksUseCase(albumId)
-                _state.value = albumWithTracks
-                lastLoadedAlbumId = albumId
-                // Сохраняем в кэш
                 if (albumWithTracks != null) {
+                    _state.value = albumWithTracks
+                    lastLoadedAlbumId = albumId
+                    // Сохраняем в кэш
                     albumCache[albumId] = albumWithTracks
-                }
-                albumWithTracks?.let { album ->
-                    val generatedColor = generateColorFromUrl(album.album.coverUrl)
-                    albumBackgroundColor = generatedColor
+                    albumWithTracks.album.coverUrl?.let { url ->
+                        val generatedColor = generateColorFromUrl(url)
+                        albumBackgroundColor = generatedColor
+                    }
+                    println("[AlbumViewModel] Album loaded successfully: ${albumWithTracks.album.title}")
+                } else {
+                    println("[AlbumViewModel] Album not found: $albumId")
+                    _state.value = null
                 }
             } catch (e: Exception) {
+                println("[AlbumViewModel] Error loading album $albumId: ${e.message}")
+                e.printStackTrace()
+                _state.value = null
             }
         }
     }

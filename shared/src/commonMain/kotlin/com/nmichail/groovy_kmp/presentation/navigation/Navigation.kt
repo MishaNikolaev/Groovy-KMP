@@ -14,6 +14,8 @@ import com.nmichail.groovy_kmp.data.manager.SessionManager
 import com.nmichail.groovy_kmp.domain.models.PlayerState
 import com.nmichail.groovy_kmp.presentation.screen.favourite.FavouriteScreen
 import com.nmichail.groovy_kmp.presentation.screen.favourite.MyLikesScreen
+import com.nmichail.groovy_kmp.presentation.screen.favourite.MyLikedAlbumsScreen
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
 import com.nmichail.groovy_kmp.presentation.screen.login.LoginScreen
 import com.nmichail.groovy_kmp.presentation.screen.player.FullPlayerScreen
@@ -111,7 +113,6 @@ private fun MainSection(
     userSession: UserSession?,
     onLogout: () -> Unit
 ) {
-    val navigator = rememberNavigator()
     val playerViewModel = remember { getKoin().get<com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel>() }
     val playerInfo by playerViewModel.playerInfo.collectAsState()
     val currentTrack = playerInfo.track
@@ -120,12 +121,13 @@ private fun MainSection(
         playerInfo.progress.currentPosition.toFloat() / playerInfo.progress.totalDuration
     } else 0f
     var showFullPlayer by rememberSaveable { mutableStateOf(false) }
-    var showLyrics by rememberSaveable { mutableStateOf(false) }
     var albumIdForReturn by rememberSaveable { mutableStateOf<String?>(null) }
     var showMyLikes by rememberSaveable { mutableStateOf(false) }
-    var lastAlbumScreen: (() -> Unit)? = null
+    var showMyLikedAlbums by rememberSaveable { mutableStateOf(false) }
+    var showFavouriteFromHome by rememberSaveable { mutableStateOf(false) }
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val backgroundColor = albumViewModel.getBackgroundColor()
+    var albumIdFromLikes by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(currentTrack?.albumId) {
         currentTrack?.albumId?.let { albumId ->
@@ -161,7 +163,6 @@ private fun MainSection(
             onSeek = { newProgress ->
                 val duration = playerInfo.progress.totalDuration
                 if (duration > 0) {
-                    val newPosition = (duration * newProgress).toLong()
                     playerViewModel.onTrackProgressChanged(newProgress)
                 }
             },
@@ -174,7 +175,7 @@ private fun MainSection(
             backgroundColor = backgroundColor
         )
     } else if (albumIdForReturn != null) {
-        val albumViewModel = remember { getKoin().get<com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel>() }
+        val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
         val albumState by albumViewModel.state.collectAsState()
         LaunchedEffect(albumIdForReturn) {
             albumIdForReturn?.let { albumViewModel.load(it) }
@@ -218,11 +219,66 @@ private fun MainSection(
                 }
             ) { paddingValues ->
                 Box(modifier = Modifier.padding(paddingValues)) {
-                    com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen(
+                    AlbumScreen(
                         albumWithTracks = albumWithTracks,
                         onBack = { albumIdForReturn = null },
                         onArtistClick = {},
-                        onLikeClick = {},
+                        onPlayClick = {},
+                        onPauseClick = {},
+                        onTrackClick = {}
+                    )
+                }
+            }
+        }
+    } else if (albumIdFromLikes != null) {
+        val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
+        val albumState by albumViewModel.state.collectAsState()
+        LaunchedEffect(albumIdFromLikes) {
+            albumIdFromLikes?.let { albumViewModel.load(it) }
+        }
+        albumState?.let { albumWithTracks ->
+            Scaffold(
+                bottomBar = {
+                    if (currentTrack != null) {
+                        PlayerBar(
+                            currentTrack = currentTrack,
+                            playerState = playerState,
+                            progress = progress,
+                            onPlayerBarClick = {
+                                showFullPlayer = true
+                                albumIdFromLikes = null
+                            },
+                            onPlayPauseClick = {
+                                if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack) else playerViewModel.resume(playerInfo.playlist, currentTrack)
+                            },
+                            onNextClick = {
+                                val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack.id }
+                                val nextIndex = if (index == -1) 0 else (index + 1) % playerInfo.playlist.size
+                                val nextTrack = playerInfo.playlist.getOrNull(nextIndex)
+                                if (nextTrack != null) playerViewModel.play(playerInfo.playlist, nextTrack)
+                            },
+                            onPreviousClick = {
+                                val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack.id }
+                                val prevIndex = if (index == -1) 0 else (index - 1 + playerInfo.playlist.size) % playerInfo.playlist.size
+                                val prevTrack = playerInfo.playlist.getOrNull(prevIndex)
+                                if (prevTrack != null) playerViewModel.play(playerInfo.playlist, prevTrack)
+                            },
+                            onTrackProgressChanged = { newProgress ->
+                                val duration = playerInfo.progress.totalDuration
+                                if (duration > 0) {
+                                    val newPosition = (duration * newProgress).toLong()
+                                    playerViewModel.onTrackProgressChanged(newProgress)
+                                }
+                            }
+                        )
+                    }
+                }
+            ) { paddingValues ->
+                Box(modifier = Modifier.padding(paddingValues)) {
+                    AlbumScreen(
+                        albumWithTracks = albumWithTracks,
+                        onBack = { albumIdFromLikes = null },
+                        onArtistClick = {},
                         onPlayClick = {},
                         onPauseClick = {},
                         onTrackClick = {}
@@ -258,7 +314,6 @@ private fun MainSection(
                             onTrackProgressChanged = { newProgress ->
                                 val duration = playerInfo.progress.totalDuration
                                 if (duration > 0) {
-                                    val newPosition = (duration * newProgress).toLong()
                                     playerViewModel.onTrackProgressChanged(newProgress)
                                 }
                             },
@@ -267,20 +322,58 @@ private fun MainSection(
                     }
                     BottomBar(
                         currentRoute = selectedTab.route,
-                        onNavigate = onTabSelected
+                        onNavigate = { tab ->
+                            if (showFavouriteFromHome && tab == Screen.MainSection.Home) {
+                                showFavouriteFromHome = false
+                                onTabSelected(Screen.MainSection.Home)
+                            } else {
+                                onTabSelected(tab)
+                            }
+                        }
                     )
                 }
             }
         ) { paddingValues ->
             Box(modifier = Modifier.padding(paddingValues)) {
                 when (selectedTab) {
-                    Screen.MainSection.Home -> HomeScreen()
+                    Screen.MainSection.Home -> {
+                        if (showFavouriteFromHome) {
+                            FavouriteScreen(
+                                onMyLikesClick = { showMyLikes = true },
+                                onAlbumsClick = { showMyLikedAlbums = true }
+                            )
+                        } else {
+                            HomeScreen(
+                                onMyLikesClick = { 
+                                    showFavouriteFromHome = true
+                                    onTabSelected(Screen.MainSection.Favourite)
+                                }
+                            )
+                        }
+                    }
                     Screen.MainSection.Search -> SearchScreen()
                     Screen.MainSection.Favourite -> {
                         if (showMyLikes) {
-                            MyLikesScreen(onBackClick = { showMyLikes = false })
+                            MyLikesScreen(
+                                onBackClick = { showMyLikes = false },
+                                onAlbumClick = { albumId ->
+                                    albumIdFromLikes = albumId
+                                    showMyLikes = false
+                                }
+                            )
+                        } else if (showMyLikedAlbums) {
+                            MyLikedAlbumsScreen(
+                                onBackClick = { showMyLikedAlbums = false },
+                                onAlbumClick = { albumId ->
+                                    albumIdFromLikes = albumId
+                                    showMyLikedAlbums = false
+                                }
+                            )
                         } else {
-                            FavouriteScreen(onMyLikesClick = { showMyLikes = true })
+                            FavouriteScreen(
+                                onMyLikesClick = { showMyLikes = true },
+                                onAlbumsClick = { showMyLikedAlbums = true }
+                            )
                         }
                     }
                     Screen.MainSection.Profile -> ProfileScreen(

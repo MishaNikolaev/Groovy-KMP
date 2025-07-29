@@ -78,7 +78,6 @@ fun AlbumScreen(
     albumWithTracks: AlbumWithTracks,
     onBack: () -> Unit,
     onArtistClick: (String) -> Unit,
-    onLikeClick: () -> Unit,
     onPlayClick: () -> Unit,
     onPauseClick: () -> Unit,
     onTrackClick: (trackId: String) -> Unit,
@@ -91,12 +90,54 @@ fun AlbumScreen(
     val albumRepository = remember { getKoin().get<AlbumRepository>() }
     var isAlbumLiked by remember(albumWithTracks.album.id) { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+    val sessionManager = remember { getKoin().get<SessionManager>() }
+    var currentUserId by remember { mutableStateOf<String?>(userId) }
 
-    LaunchedEffect(albumWithTracks.album.id, userId) {
-        if (userId != null && albumWithTracks.album.id != null) {
-            val liked = albumRepository.getLikedAlbums(userId).any { it.id == albumWithTracks.album.id }
-            isAlbumLiked = liked
+    LaunchedEffect(Unit) {
+        try {
+            if (userId == null) {
+                val session = sessionManager.getSession()
+                currentUserId = session?.email
+                println("[AlbumScreen] Got userId from session: $currentUserId")
+            } else {
+                currentUserId = userId
+            }
+            
+            val userId = currentUserId
+            if (userId != null && albumWithTracks.album.id != null) {
+                try {
+                    val cachedAlbums = AlbumCache.loadAlbums()
+                    val isLiked = cachedAlbums?.any { it.id == albumWithTracks.album.id } ?: false
+                    isAlbumLiked = isLiked
+                    println("[AlbumScreen] Album ${albumWithTracks.album.id} is liked (from cache): $isLiked")
+                } catch (e: Exception) {
+                    println("[AlbumScreen] Error loading from cache: ${e.message}")
+                    isAlbumLiked = false
+                }
+            } else {
+                println("[AlbumScreen] Cannot check like status - userId: $userId, albumId: ${albumWithTracks.album.id}")
+                isAlbumLiked = false
+            }
+        } catch (e: Exception) {
+            println("Error getting session: ${e.message}")
+            isAlbumLiked = false
         }
+    }
+
+    LaunchedEffect(Unit) {
+        try {
+            val cachedAlbums = AlbumCache.loadAlbums()
+            if (cachedAlbums != null && cachedAlbums.size > 10) {
+                println("[AlbumScreen] Clearing cache - found ${cachedAlbums.size} albums, probably all albums instead of liked ones")
+                AlbumCache.saveAlbums(emptyList())
+            }
+        } catch (e: Exception) {
+            println("[AlbumScreen] Error checking cache size: ${e.message}")
+        }
+    }
+
+    LaunchedEffect(isAlbumLiked) {
+        println("[AlbumScreen] isAlbumLiked changed to: $isAlbumLiked")
     }
 
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
@@ -144,8 +185,7 @@ fun AlbumScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 24.dp)
-                        .align(Alignment.Center),
+                        .padding(top = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
@@ -181,7 +221,6 @@ fun AlbumScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 48.dp),
-                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
                         val author = albumWithTracks.album.artist ?: ""
@@ -222,31 +261,49 @@ fun AlbumScreen(
                     ) {
                         IconButton(
                             onClick = {
+                                println("🔥🔥🔥 [AlbumScreen] Like button clicked! 🔥🔥🔥")
+                                println("[AlbumScreen] isAlbumLiked: $isAlbumLiked")
+                                println("[AlbumScreen] albumId: ${albumWithTracks.album.id}")
+                                println("[AlbumScreen] userId: $currentUserId")
                                 coroutineScope.launch {
-                                    if (!isAlbumLiked && albumWithTracks.album.id != null) {
-                                        albumRepository.likeAlbum(albumWithTracks.album.id)
-                                        // Обновить кэш после лайка
-                                        // TODO: Получить userId из сессии
-                                        val sessionManager = getKoin().get<SessionManager>()
-                                        val session = sessionManager.getSession()
-                                        val userId = session?.email // Используем email как userId
-                                        if (userId != null) {
-                                            val liked = albumRepository.getLikedAlbums(userId)
-                                            AlbumCache.saveAlbums(liked)
+                                    try {
+                                        val userId = currentUserId
+                                        if (!isAlbumLiked && albumWithTracks.album.id != null) {
+                                            println("[AlbumScreen] Liking album ${albumWithTracks.album.id}")
+                                            albumRepository.likeAlbum(albumWithTracks.album.id)
+                                            
+                                            try {
+                                                val currentCached = AlbumCache.loadAlbums() ?: emptyList()
+                                                val updatedCached = currentCached + albumWithTracks.album
+                                                AlbumCache.saveAlbums(updatedCached)
+                                                println("[AlbumScreen] Updated cache with ${updatedCached.size} albums")
+                                            } catch (e: Exception) {
+                                                println("[AlbumScreen] Error updating cache: ${e.message}")
+                                            }
+                                            
+                                            isAlbumLiked = true
+                                            println("[AlbumScreen] Album liked successfully")
+                                        } else if (isAlbumLiked && albumWithTracks.album.id != null) {
+                                            println("[AlbumScreen] Unliking album ${albumWithTracks.album.id}")
+                                            albumRepository.unlikeAlbum(albumWithTracks.album.id)
+                                            
+                                            try {
+                                                val currentCached = AlbumCache.loadAlbums() ?: emptyList()
+                                                val updatedCached = currentCached.filter { it.id != albumWithTracks.album.id }
+                                                AlbumCache.saveAlbums(updatedCached)
+                                                println("[AlbumScreen] Updated cache with ${updatedCached.size} albums")
+                                            } catch (e: Exception) {
+                                                println("[AlbumScreen] Error updating cache: ${e.message}")
+                                            }
+                                            
+                                            isAlbumLiked = false
+                                            println("[AlbumScreen] Album unliked successfully")
+                                        } else {
+                                            println("[AlbumScreen] Cannot like/unlike - userId: $userId, albumId: ${albumWithTracks.album.id}")
                                         }
-                                        isAlbumLiked = true
-                                    } else if (isAlbumLiked && albumWithTracks.album.id != null) {
-                                        albumRepository.unlikeAlbum(albumWithTracks.album.id)
-                                        // Обновить кэш после дизлайка
-                                        // TODO: Получить userId из сессии
-                                        val sessionManager = getKoin().get<SessionManager>()
-                                        val session = sessionManager.getSession()
-                                        val userId = session?.email // Используем email как userId
-                                        if (userId != null) {
-                                            val liked = albumRepository.getLikedAlbums(userId)
-                                            AlbumCache.saveAlbums(liked)
-                                        }
-                                        isAlbumLiked = false
+                                    } catch (e: Exception) {
+                                        println("Error toggling album like: ${e.message}")
+                                        e.printStackTrace()
                                     }
                                 }
                             },
@@ -265,16 +322,20 @@ fun AlbumScreen(
                         IconButton(
                             onClick = {
                                 coroutineScope.launch {
-                                    val firstTrack = albumWithTracks.tracks.firstOrNull()
-                                    if (currentTrack?.id != firstTrack?.id) {
-                                        playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
-                                        firstTrack?.let { playerViewModel.play(albumWithTracks.tracks, it) }
-                                    } else {
-                                        if (isPlaying) {
-                                            playerViewModel.pause(albumWithTracks.tracks, currentTrack ?: return@launch)
+                                    try {
+                                        val firstTrack = albumWithTracks.tracks.firstOrNull()
+                                        if (currentTrack?.id != firstTrack?.id) {
+                                            playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
+                                            firstTrack?.let { playerViewModel.play(albumWithTracks.tracks, it) }
                                         } else {
-                                            playerViewModel.resume(albumWithTracks.tracks, currentTrack ?: return@launch)
+                                            if (isPlaying) {
+                                                playerViewModel.pause(albumWithTracks.tracks, currentTrack ?: return@launch)
+                                            } else {
+                                                playerViewModel.resume(albumWithTracks.tracks, currentTrack ?: return@launch)
+                                            }
                                         }
+                                    } catch (e: Exception) {
+                                        println("Error playing album: ${e.message}")
                                     }
                                 }
                             },
@@ -305,8 +366,12 @@ fun AlbumScreen(
                 index = index,
                 onClick = {
                     coroutineScope.launch {
-                        playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
-                        playerViewModel.play(albumWithTracks.tracks, track)
+                        try {
+                            playerViewModel.setPlaylist(albumWithTracks.tracks, albumWithTracks.album.title ?: "Unknown Album")
+                            playerViewModel.play(albumWithTracks.tracks, track)
+                        } catch (e: Exception) {
+                            println("Error playing track: ${e.message}")
+                        }
                     }
                 }
             )
@@ -314,7 +379,7 @@ fun AlbumScreen(
 
         item {
             Spacer(modifier = Modifier.height(40.dp))
-                    }
+        }
     }
 }
 

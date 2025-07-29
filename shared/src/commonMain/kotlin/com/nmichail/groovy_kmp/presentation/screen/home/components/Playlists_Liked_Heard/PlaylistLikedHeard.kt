@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -15,23 +16,35 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nmichail.groovy_kmp.domain.models.Track
+import com.nmichail.groovy_kmp.domain.models.Album
 import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 import groovy_kmp.shared.generated.resources.Res
 import groovy_kmp.shared.generated.resources.playlist_example
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
-
+import com.nmichail.groovy_kmp.data.local.TrackCache
+import com.nmichail.groovy_kmp.data.local.AlbumCache
+import kotlinx.coroutines.launch
 
 @Composable
 fun PlaylistsLikedHeard(
     onHistoryClick: () -> Unit = {},
+    onMyLikesClick: () -> Unit = {},
     lastPlayedTrack: Track? = null
 ) {
+    var likedTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
+    var likedAlbums by remember { mutableStateOf<List<Album>>(emptyList()) }
+    var lastLikedAlbum by remember { mutableStateOf<Album?>(null) }
+    
+    LaunchedEffect(Unit) {
+        val cachedTracks = TrackCache.loadTracks()
+        val cachedAlbums = AlbumCache.loadAlbums()
+        likedTracks = cachedTracks ?: emptyList()
+        likedAlbums = cachedAlbums ?: emptyList()
+        lastLikedAlbum = likedAlbums.lastOrNull()
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -40,10 +53,11 @@ fun PlaylistsLikedHeard(
     ) {
         PlaylistPreview(
             title = "My likes",
-            subtitle = "163 tracks",
-            cover = Res.drawable.playlist_example,
+            subtitle = "${likedTracks.size} tracks, ${likedAlbums.size} albums",
+            coverUrl = lastLikedAlbum?.coverUrl,
+            coverColor = lastLikedAlbum?.coverColor,
             modifier = Modifier.weight(1f),
-            onClick = { /* TODO */ }
+            onClick = onMyLikesClick
         )
         var localCoverColor by remember(lastPlayedTrack?.id) { mutableStateOf<Long?>(lastPlayedTrack?.coverColor) }
         PlaylistPreview(

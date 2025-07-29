@@ -45,11 +45,13 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.zIndex
+import com.nmichail.groovy_kmp.data.manager.SessionManager
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalResourceApi::class)
 @Composable
 fun FavouriteScreen(
-    onMyLikesClick: () -> Unit = {}
+    onMyLikesClick: () -> Unit = {},
+    onAlbumsClick: () -> Unit = {}
 ) {
     var likedTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
     var likedAlbums by remember { mutableStateOf<List<Album>>(emptyList()) }
@@ -57,6 +59,7 @@ fun FavouriteScreen(
     
     val trackRepository = remember { getKoin().get<TrackRepository>() }
     val albumRepository = remember { getKoin().get<AlbumRepository>() }
+    val sessionManager = remember { getKoin().get<SessionManager>() }
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -68,7 +71,10 @@ fun FavouriteScreen(
                 likedTracks = cachedTracks ?: emptyList()
                 likedAlbums = cachedAlbums ?: emptyList()
                 
+                println("[FavouriteScreen] Loaded ${likedTracks.size} liked tracks and ${likedAlbums.size} liked albums from cache")
+                
             } catch (e: Exception) {
+                println("Error loading liked content from cache: ${e.message}")
                 likedTracks = emptyList()
                 likedAlbums = emptyList()
             } finally {
@@ -85,6 +91,7 @@ fun FavouriteScreen(
             .verticalScroll(rememberScrollState())
     ) {
         Spacer(modifier = Modifier.height(34.dp))
+        
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.clickable { onMyLikesClick() }
@@ -118,7 +125,7 @@ fun FavouriteScreen(
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "${likedTracks.size} tracks",
+                    text = "${likedTracks.size} tracks, ${likedAlbums.size} albums",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color.Gray,
                         fontSize = 16.sp
@@ -126,6 +133,7 @@ fun FavouriteScreen(
                 )
             }
         }
+        
         Spacer(modifier = Modifier.height(24.dp))
 
         if (isLoading) {
@@ -301,26 +309,41 @@ fun FavouriteScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { }
+                    .clickable { onAlbumsClick() }
             ) {
                 Box(
                     modifier = Modifier.size(width = 80.dp, height = 76.dp)
                 ) {
+                    val lastLikedAlbum = likedAlbums.lastOrNull()
+                    val backgroundColor = lastLikedAlbum?.coverColor?.let { Color(it) } ?: Color(0xFFD3D3D3)
+                    
                     Box(
                         modifier = Modifier
                             .size(68.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFD3D3D3))
+                            .background(backgroundColor)
                             .align(Alignment.TopEnd)
                     )
-                    Image(
-                        painter = painterResource(Res.drawable.Queen_The_Miracle_example),
-                        contentDescription = "Альбом",
-                        modifier = Modifier
-                            .size(68.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .align(Alignment.BottomStart)
-                    )
+                    
+                    if (lastLikedAlbum != null) {
+                        PlatformImage(
+                            url = lastLikedAlbum.coverUrl,
+                            contentDescription = "Альбом",
+                            modifier = Modifier
+                                .size(68.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .align(Alignment.BottomStart)
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(Res.drawable.Queen_The_Miracle_example),
+                            contentDescription = "Альбом",
+                            modifier = Modifier
+                                .size(68.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .align(Alignment.BottomStart)
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(
@@ -328,14 +351,14 @@ fun FavouriteScreen(
                     modifier = Modifier.align(Alignment.CenterVertically)
                 ) {
                     Text(
-                        text = "Альбомы",
+                        text = "Albums",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium, fontSize = 18.sp),
                         maxLines = 1,
                         modifier = Modifier.basicMarquee(),
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "The Miracle",
+                        text = likedAlbums.lastOrNull()?.title ?: "The Miracle",
                         style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray, fontSize = 15.sp),
                         maxLines = 2
                     )

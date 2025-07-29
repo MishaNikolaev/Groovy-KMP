@@ -1,6 +1,6 @@
 package com.nmichail.groovy_kmp.presentation.screen.home
 
-import com.nmichail.groovy_kmp.data.local.AlbumCache
+import com.nmichail.groovy_kmp.data.local.AllAlbumsCache
 import com.nmichail.groovy_kmp.domain.models.Album
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
@@ -22,19 +22,16 @@ class HomeViewModel(
 
     fun load() {
         viewModelScope.launch {
-            // 1. Сначала пробуем загрузить из кэша
             val cachedAlbums = withContext(Dispatchers.Default) {
-                AlbumCache.loadAlbums()
+                AllAlbumsCache.loadAllAlbums()
             }
             if (cachedAlbums != null && cachedAlbums.isNotEmpty()) {
                 _albums.value = cachedAlbums
             }
-            // 2. Потом обновляем из сети
             val loadedAlbums = albumRepository.getAlbums()
             _albums.value = loadedAlbums
-            // 3. Сохраняем в кэш
             withContext(Dispatchers.Default) {
-                AlbumCache.saveAlbums(loadedAlbums)
+                AllAlbumsCache.saveAllAlbums(loadedAlbums)
             }
             val loadedTracks = trackRepository.getTopTracks()
             _tracks.value = loadedTracks

@@ -34,6 +34,33 @@ actual object AlbumCache {
     }
 }
 
+actual object AllAlbumsCache {
+    private const val CACHE_FILE = "all_albums_cache.json"
+    private fun getCachePath(): String {
+        val urls = NSFileManager.defaultManager.URLsForDirectory(NSDocumentDirectory, NSUserDomainMask)
+        val documentsDirectory = (urls[0] as? NSURL)?.path ?: return CACHE_FILE
+        return documentsDirectory + "/" + CACHE_FILE
+    }
+
+    actual suspend fun saveAllAlbums(albums: List<Album>) {
+        val json = Json.encodeToString(albums)
+        val path = getCachePath()
+        (json as NSString).writeToFile(path, true)
+    }
+
+    actual suspend fun loadAllAlbums(): List<Album>? {
+        val path = getCachePath()
+        val fileManager = NSFileManager.defaultManager
+        if (!fileManager.fileExistsAtPath(path)) return null
+        val json = NSString.stringWithContentsOfFile(path)
+        return try {
+            Json.decodeFromString(json as String)
+        } catch (e: Exception) {
+            null
+        }
+    }
+}
+
 actual object TrackCache {
     private const val CACHE_FILE = "tracks_cache.json"
     private fun getCachePath(): String {

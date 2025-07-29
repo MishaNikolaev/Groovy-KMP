@@ -33,7 +33,9 @@ import org.koin.mp.KoinPlatform.getKoin
 import com.nmichail.groovy_kmp.presentation.screen.home.components.recent.RecentTracksViewModel
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    onMyLikesClick: () -> Unit = {}
+) {
     val viewModel = remember { getKoin().get<HomeViewModel>() }
     val albums by viewModel.albums.collectAsState()
     var selectedAlbumId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -103,6 +105,7 @@ fun HomeScreen() {
 
             PlaylistsLikedHeard(
                 onHistoryClick = { showHistoryScreen = true },
+                onMyLikesClick = onMyLikesClick,
                 lastPlayedTrack = lastPlayedTrack
             )
             Spacer(modifier = Modifier.height(14.dp))
@@ -169,24 +172,43 @@ fun HomeScreen() {
         val albumWithTracks by albumViewModel.state.collectAsState()
 
         LaunchedEffect(selectedAlbumId) {
-            selectedAlbumId?.let { albumViewModel.load(it) }
+            selectedAlbumId?.let { albumId ->
+                try {
+                    println("[HomeScreen] Loading album: $albumId")
+                    albumViewModel.load(albumId)
+                } catch (e: Exception) {
+                    println("[HomeScreen] Error loading album $albumId: ${e.message}")
+                    e.printStackTrace()
+                }
+            }
         }
 
-        albumWithTracks?.let { album ->
+        if (albumWithTracks != null) {
             AlbumScreen(
-                albumWithTracks = album,
+                albumWithTracks = albumWithTracks!!,
                 onBack = { selectedAlbumId = null },
                 onArtistClick = { artistName -> /* TODO: обработка клика по артисту */ },
-                onLikeClick = { /* TODO: обработка лайка */ },
                 onPlayClick = { /* TODO: обработка play */ },
                 onPauseClick = { /* TODO: обработка паузы */ },
                 onTrackClick = { trackId -> /* TODO: обработка клика по треку */ }
             )
-        } ?: Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = Color.Black)
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(color = Color.Black)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Loading album...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                }
+            }
         }
     }
 }
