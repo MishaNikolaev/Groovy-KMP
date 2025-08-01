@@ -25,6 +25,7 @@ import com.nmichail.groovy_kmp.presentation.screen.register.RegisterScreen
 import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
 import com.nmichail.groovy_kmp.presentation.screen.search.SearchScreen
 import com.nmichail.groovy_kmp.presentation.screen.artist.ArtistScreen
+import com.nmichail.groovy_kmp.presentation.screen.artist.AllTracksScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -133,6 +134,8 @@ private fun MainSection(
     val backgroundColor = albumViewModel.getBackgroundColor()
     var albumIdFromLikes by rememberSaveable { mutableStateOf<String?>(null) }
     var showArtistScreen by rememberSaveable { mutableStateOf<String?>(null) }
+    var albumIdFromArtist by rememberSaveable { mutableStateOf<String?>(null) }
+    var showAllTracksScreen by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(currentTrack?.albumId) {
         currentTrack?.albumId?.let { albumId ->
@@ -270,50 +273,216 @@ private fun MainSection(
             }
         }
     } else if (showArtistScreen != null) {
-        ArtistScreen(
-            artistName = showArtistScreen!!,
-            onBackClick = { 
-                showArtistScreen = null
-                // Возвращаемся на предыдущий экран
-                previousScreen?.let { screen ->
-                    when (screen) {
-                        "home" -> {
-                            showFavouriteFromHome = false
-                            onTabSelected(Screen.MainSection.Home)
-                        }
-                        "favourite" -> {
-                            onTabSelected(Screen.MainSection.Favourite)
-                        }
-                        "search" -> {
-                            onTabSelected(Screen.MainSection.Search)
-                        }
-                        "profile" -> {
-                            onTabSelected(Screen.MainSection.Profile)
-                        }
-                        "album" -> {
-                        }
-                        "artist" -> {
-                            showFullPlayer = true
-                        }
-                    }
-                }
-                previousScreen = null
-            },
-            onTrackClick = { track ->
-                playerViewModel.play(listOf(track), track)
-            },
-            onAlbumClick = { album ->
-                // TODO: Navigate to album screen
-            },
-            onPlayClick = {
-                // TODO: Play all tracks by artist
-            },
-            onPauseClick = {
+        Scaffold(
+            bottomBar = {
                 if (currentTrack != null) {
-                    playerViewModel.pause(playerInfo.playlist, currentTrack)
+                    PlayerBar(
+                        currentTrack = currentTrack,
+                        playerState = playerState,
+                        progress = progress,
+                        onPlayerBarClick = {
+                            previousScreen = "artist"
+                            showFullPlayer = true
+                            showArtistScreen = null
+                        },
+                        onPlayPauseClick = {
+                            if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack) else playerViewModel.resume(playerInfo.playlist, currentTrack)
+                        },
+                        onNextClick = {
+                            val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack.id }
+                            val nextIndex = if (index == -1) 0 else (index + 1) % playerInfo.playlist.size
+                            val nextTrack = playerInfo.playlist.getOrNull(nextIndex)
+                            if (nextTrack != null) playerViewModel.play(playerInfo.playlist, nextTrack)
+                        },
+                        onPreviousClick = {
+                            val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack.id }
+                            val prevIndex = if (index == -1) 0 else (index - 1 + playerInfo.playlist.size) % playerInfo.playlist.size
+                            val prevTrack = playerInfo.playlist.getOrNull(prevIndex)
+                            if (prevTrack != null) playerViewModel.play(playerInfo.playlist, prevTrack)
+                        },
+                        onTrackProgressChanged = { newProgress ->
+                            val duration = playerInfo.progress.totalDuration
+                            if (duration > 0) {
+                                val newPosition = (duration * newProgress).toLong()
+                                playerViewModel.onTrackProgressChanged(newProgress)
+                            }
+                        }
+                    )
                 }
             }
-        )
+        ) { paddingValues ->
+            Box(modifier = Modifier.padding(paddingValues)) {
+                ArtistScreen(
+                    artistName = showArtistScreen!!,
+                    onBackClick = { 
+                        showArtistScreen = null
+                        // Возвращаемся на предыдущий экран
+                        previousScreen?.let { screen ->
+                            when (screen) {
+                                "home" -> {
+                                    showFavouriteFromHome = false
+                                    onTabSelected(Screen.MainSection.Home)
+                                }
+                                "favourite" -> {
+                                    onTabSelected(Screen.MainSection.Favourite)
+                                }
+                                "search" -> {
+                                    onTabSelected(Screen.MainSection.Search)
+                                }
+                                "profile" -> {
+                                    onTabSelected(Screen.MainSection.Profile)
+                                }
+                                "album" -> {
+                                }
+                                "artist" -> {
+                                    showFullPlayer = true
+                                }
+                            }
+                        }
+                        previousScreen = null
+                    },
+                    onTrackClick = { track ->
+                        playerViewModel.play(listOf(track), track)
+                    },
+                    onAlbumClick = { album ->
+                        album.id?.let { albumId ->
+                            albumIdFromArtist = albumId
+                            showArtistScreen = null
+                            previousScreen = "artist"
+                        }
+                    },
+                    onPlayClick = {
+                        // TODO: Play all tracks by artist
+                    },
+                    onPauseClick = {
+                        if (currentTrack != null) {
+                            playerViewModel.pause(playerInfo.playlist, currentTrack)
+                        }
+                    },
+                    onShowAllTracksClick = {
+                        showAllTracksScreen = showArtistScreen
+                        showArtistScreen = null
+                        previousScreen = "artist"
+                    }
+                )
+            }
+        }
+    } else if (showAllTracksScreen != null) {
+        Scaffold(
+            bottomBar = {
+                if (currentTrack != null) {
+                    PlayerBar(
+                        currentTrack = currentTrack,
+                        playerState = playerState,
+                        progress = progress,
+                        onPlayerBarClick = {
+                            previousScreen = "all_tracks"
+                            showFullPlayer = true
+                            showAllTracksScreen = null
+                        },
+                        onPlayPauseClick = {
+                            if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack) else playerViewModel.resume(playerInfo.playlist, currentTrack)
+                        },
+                        onNextClick = {
+                            val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack.id }
+                            val nextIndex = if (index == -1) 0 else (index + 1) % playerInfo.playlist.size
+                            val nextTrack = playerInfo.playlist.getOrNull(nextIndex)
+                            if (nextTrack != null) playerViewModel.play(playerInfo.playlist, nextTrack)
+                        },
+                        onPreviousClick = {
+                            val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack.id }
+                            val prevIndex = if (index == -1) 0 else (index - 1 + playerInfo.playlist.size) % playerInfo.playlist.size
+                            val prevTrack = playerInfo.playlist.getOrNull(prevIndex)
+                            if (prevTrack != null) playerViewModel.play(playerInfo.playlist, prevTrack)
+                        },
+                        onTrackProgressChanged = { newProgress ->
+                            val duration = playerInfo.progress.totalDuration
+                            if (duration > 0) {
+                                val newPosition = (duration * newProgress).toLong()
+                                playerViewModel.onTrackProgressChanged(newProgress)
+                            }
+                        }
+                    )
+                }
+            }
+        ) { paddingValues ->
+            Box(modifier = Modifier.padding(paddingValues)) {
+                AllTracksScreen(
+                    artistName = showAllTracksScreen!!,
+                    onBackClick = { 
+                        showAllTracksScreen = null
+                        showArtistScreen = showAllTracksScreen
+                        previousScreen = "artist"
+                    },
+                    onTrackClick = { track ->
+                        playerViewModel.play(listOf(track), track)
+                    },
+                    currentTrack = currentTrack,
+                    isPlaying = playerState is PlayerState.Playing
+                )
+            }
+        }
+    } else if (albumIdFromArtist != null) {
+        val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
+        val albumState by albumViewModel.state.collectAsState()
+        LaunchedEffect(albumIdFromArtist) {
+            albumIdFromArtist?.let { albumViewModel.load(it) }
+        }
+        albumState?.let { albumWithTracks ->
+            Scaffold(
+                bottomBar = {
+                    if (currentTrack != null) {
+                        PlayerBar(
+                            currentTrack = currentTrack,
+                            playerState = playerState,
+                            progress = progress,
+                            onPlayerBarClick = {
+                                previousScreen = "artist"
+                                showFullPlayer = true
+                                albumIdFromArtist = null
+                            },
+                            onPlayPauseClick = {
+                                if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack) else playerViewModel.resume(playerInfo.playlist, currentTrack)
+                            },
+                            onNextClick = {
+                                val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack.id }
+                                val nextIndex = if (index == -1) 0 else (index + 1) % playerInfo.playlist.size
+                                val nextTrack = playerInfo.playlist.getOrNull(nextIndex)
+                                if (nextTrack != null) playerViewModel.play(playerInfo.playlist, nextTrack)
+                            },
+                            onPreviousClick = {
+                                val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack.id }
+                                val prevIndex = if (index == -1) 0 else (index - 1 + playerInfo.playlist.size) % playerInfo.playlist.size
+                                val prevTrack = playerInfo.playlist.getOrNull(prevIndex)
+                                if (prevTrack != null) playerViewModel.play(playerInfo.playlist, prevTrack)
+                            },
+                            onTrackProgressChanged = { newProgress ->
+                                val duration = playerInfo.progress.totalDuration
+                                if (duration > 0) {
+                                    val newPosition = (duration * newProgress).toLong()
+                                    playerViewModel.onTrackProgressChanged(newProgress)
+                                }
+                            }
+                        )
+                    }
+                }
+            ) { paddingValues ->
+                Box(modifier = Modifier.padding(paddingValues)) {
+                    AlbumScreen(
+                        albumWithTracks = albumWithTracks,
+                        onBack = { albumIdFromArtist = null },
+                        onArtistClick = { artistName ->
+                            showArtistScreen = artistName
+                            albumIdFromArtist = null
+                            previousScreen = "album"
+                        },
+                        onPlayClick = {},
+                        onPauseClick = {},
+                        onTrackClick = {}
+                    )
+                }
+            }
+        }
     } else if (albumIdFromLikes != null) {
         val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
         val albumState by albumViewModel.state.collectAsState()

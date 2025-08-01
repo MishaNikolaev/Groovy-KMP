@@ -26,7 +26,6 @@ import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 import kotlinx.coroutines.delay
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
-import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.generateAlbumColor
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.animation.core.infiniteRepeatable

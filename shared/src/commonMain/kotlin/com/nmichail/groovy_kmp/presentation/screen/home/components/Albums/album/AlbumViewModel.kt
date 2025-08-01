@@ -36,12 +36,10 @@ class AlbumViewModel(
 
         viewModelScope.launch {
             try {
-                println("[AlbumViewModel] Loading album with id: $albumId")
                 val albumWithTracks = getAlbumWithTracksUseCase(albumId)
                 if (albumWithTracks != null) {
                     _state.value = albumWithTracks
                     lastLoadedAlbumId = albumId
-                    // Сохраняем в кэш
                     albumCache[albumId] = albumWithTracks
                     albumWithTracks.album.coverUrl?.let { url ->
                         val generatedColor = generateColorFromUrl(url)
@@ -71,15 +69,6 @@ class AlbumViewModel(
             return
         }
         albumColors[albumId] = color
-    }
-
-    fun getAlbumColor(albumId: String?): Color {
-        if (albumId == null) return Color(0xFFAAA287)
-        val existing = albumColors[albumId]
-        if (existing != null) {
-            return existing
-        }
-        return Color(0xFFAAA287)
     }
 
     fun getAlbumCoverColor(albumId: String?): Color {

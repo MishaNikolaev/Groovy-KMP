@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,41 +20,45 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.nmichail.groovy_kmp.domain.models.Album
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
 import com.nmichail.groovy_kmp.data.local.TrackCache
+import com.nmichail.groovy_kmp.presentation.screen.artist.AllTracksViewModel
 import kotlinx.coroutines.launch
 import org.koin.mp.KoinPlatform.getKoin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ArtistScreen(
+fun AllTracksScreen(
     artistName: String,
     onBackClick: () -> Unit,
     onTrackClick: (Track) -> Unit,
-    onAlbumClick: (Album) -> Unit,
-    onPlayClick: () -> Unit,
-    onPauseClick: () -> Unit,
-    onShowAllTracksClick: () -> Unit = {}
+    currentTrack: Track?,
+    isPlaying: Boolean
 ) {
     val koin = getKoin()
-    val artistViewModel = remember { koin.get<ArtistViewModel>() }
-    val playerViewModel = remember { koin.get<PlayerViewModel>() }
-    val playerInfo by playerViewModel.playerInfo.collectAsState()
-    
-    val state by artistViewModel.state.collectAsState()
+    val allTracksViewModel = remember { koin.get<AllTracksViewModel>() }
     val coroutineScope = rememberCoroutineScope()
     var likedTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
     
+    val state by allTracksViewModel.state.collectAsState()
+    
     LaunchedEffect(artistName) {
-        artistViewModel.loadArtistData(artistName)
+        if (artistName.isNotBlank()) {
+            try {
+                allTracksViewModel.loadTracksByArtist(artistName)
+            } catch (e: Exception) {
+                println("Error loading tracks: ${e.message}")
+                e.printStackTrace()
+            }
+        }
         // Загружаем лайкнутые треки
         likedTracks = TrackCache.loadTracks() ?: emptyList()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // Back button overlay
         IconButton(
             onClick = onBackClick,
             modifier = Modifier
@@ -97,7 +99,11 @@ fun ArtistScreen(
                         color = Color.Gray
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = { artistViewModel.loadArtistData(artistName) }) {
+                    Button(onClick = { 
+                        coroutineScope.launch {
+                            allTracksViewModel.loadTracksByArtist(artistName)
+                        }
+                    }) {
                         Text("Повторить")
                     }
                 }
@@ -107,38 +113,33 @@ fun ArtistScreen(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-            // Artist Header Section
-            item {
-                ArtistHeaderSection(
-                    artistName = state.artistName,
-                    artistPhotoUrl = state.artistPhotoUrl,
-                    onPlayClick = onPlayClick,
-                    onPauseClick = onPauseClick
-                )
-            }
-            
-            // Popular Tracks Section
-            if (state.tracks.isNotEmpty()) {
+                // Artist Header Section
                 item {
-                    PopularTracksSection(
-                        tracks = state.tracks,
-                        onTrackClick = onTrackClick,
-                        currentTrack = playerInfo.track,
-                        isPlaying = playerInfo.state is com.nmichail.groovy_kmp.domain.models.PlayerState.Playing,
-                        onShowAllTracksClick = onShowAllTracksClick,
-                        likedTracks = likedTracks,
-                        onLikeTrack = { track ->
+                    ArtistHeaderSection(
+                        artistName = artistName,
+                        artistPhotoUrl = state.artistPhotoUrl,
+                        onPlayClick = { /* TODO: Play all tracks */ },
+                        onPauseClick = { /* TODO: Pause */ }
+                    )
+                }
+                
+                items(state.tracks) { track ->
+                    TrackRow(
+                        track = track,
+                        isCurrentTrack = currentTrack?.id == track.id,
+                        isPlaying = isPlaying && currentTrack?.id == track.id,
+                        onClick = { onTrackClick(track) },
+                        isLiked = likedTracks.any { it.id == track.id },
+                        onLikeClick = {
                             coroutineScope.launch {
                                 val cached = TrackCache.loadTracks()?.toMutableList() ?: mutableListOf()
                                 if (likedTracks.none { it.id == track.id }) {
-                                    // Лайкаем трек
                                     if (track.id != null && cached.none { it.id == track.id }) {
                                         cached.add(track)
                                         TrackCache.saveTracks(cached)
                                     }
                                     likedTracks = likedTracks + track
                                 } else {
-                                    // Убираем лайк
                                     val updated = cached.filter { it.id != track.id }
                                     TrackCache.saveTracks(updated)
                                     likedTracks = likedTracks.filter { it.id != track.id }
@@ -148,16 +149,6 @@ fun ArtistScreen(
                     )
                 }
             }
-            
-            if (state.albums.isNotEmpty()) {
-                item {
-                    AlbumsSection(
-                        albums = state.albums,
-                        onAlbumClick = onAlbumClick
-                    )
-                }
-            }
-        }
         }
     }
 }
@@ -208,8 +199,6 @@ private fun ArtistHeaderSection(
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
             )
-            
-
         }
         
         // Action Buttons
@@ -219,8 +208,6 @@ private fun ArtistHeaderSection(
                 .padding(bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-
-            
             // Listen Button
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -249,55 +236,6 @@ private fun ArtistHeaderSection(
             }
         }
     }
-    
-
-}
-
-@Composable
-private fun PopularTracksSection(
-    tracks: List<Track>,
-    onTrackClick: (Track) -> Unit,
-    currentTrack: Track?,
-    isPlaying: Boolean,
-    onShowAllTracksClick: () -> Unit = {},
-    likedTracks: List<Track> = emptyList(),
-    onLikeTrack: (Track) -> Unit = {}
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Популярные треки",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = "Показать все",
-                modifier = Modifier.clickable { onShowAllTracksClick() }
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        tracks.take(3).forEach { track ->
-            TrackRow(
-                track = track,
-                isCurrentTrack = currentTrack?.id == track.id,
-                isPlaying = isPlaying && currentTrack?.id == track.id,
-                onClick = { onTrackClick(track) },
-                isLiked = likedTracks.any { it.id == track.id },
-                onLikeClick = { onLikeTrack(track) }
-            )
-        }
-    }
 }
 
 @Composable
@@ -313,7 +251,7 @@ private fun TrackRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .padding(vertical = 8.dp),
+            .padding(vertical = 8.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Album Cover
@@ -354,7 +292,7 @@ private fun TrackRow(
             )
         }
         
-        // Like Button (replaces play button)
+        // Like Button
         IconButton(
             onClick = onLikeClick,
             modifier = Modifier.size(32.dp)
@@ -367,82 +305,4 @@ private fun TrackRow(
             )
         }
     }
-}
-
-@Composable
-private fun AlbumsSection(
-    albums: List<Album>,
-    onAlbumClick: (Album) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Альбомы",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(albums) { album ->
-                AlbumCard(
-                    album = album,
-                    onClick = { onAlbumClick(album) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun AlbumCard(
-    album: Album,
-    onClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .width(120.dp)
-            .clickable { onClick() }
-    ) {
-        album.coverUrl?.let { url ->
-            PlatformImage(
-                url = url,
-                contentDescription = album.title,
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            )
-        } ?: run {
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.Gray)
-            )
-        }
-        
-        Text(
-            text = album.title ?: "",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-        
-        Text(
-            text = album.artist ?: "",
-            fontSize = 10.sp,
-            color = Color.Gray,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
 } 
-
- 

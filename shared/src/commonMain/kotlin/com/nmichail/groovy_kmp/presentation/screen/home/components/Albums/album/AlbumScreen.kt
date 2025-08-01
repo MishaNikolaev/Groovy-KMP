@@ -39,40 +39,6 @@ import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
 import com.nmichail.groovy_kmp.data.local.AlbumCache
 import com.nmichail.groovy_kmp.data.manager.SessionManager
 
-fun generateAlbumColor(url: String?): Color {
-    val hash = (url ?: "").hashCode()
-    val hue = (hash % 360).toFloat()
-    val saturation = when {
-        hash % 3 == 0 -> 0.4f
-        hash % 3 == 1 -> 0.25f
-        else -> 0.15f
-    }
-    val lightness = when {
-        hash % 4 == 0 -> 0.35f
-        hash % 4 == 1 -> 0.45f
-        hash % 4 == 2 -> 0.55f
-        else -> 0.4f
-    }
-    val c = (1 - kotlin.math.abs(2 * lightness - 1)) * saturation
-    val x = c * (1 - kotlin.math.abs((hue / 60) % 2 - 1))
-    val m = lightness - c / 2
-    val (r, g, b) = when {
-        hue < 60 -> Triple(c, x, 0f)
-        hue < 120 -> Triple(x, c, 0f)
-        hue < 180 -> Triple(0f, c, x)
-        hue < 240 -> Triple(0f, x, c)
-        hue < 300 -> Triple(x, 0f, c)
-        else -> Triple(c, 0f, x)
-    }
-    return Color(
-        red = (r + m).coerceIn(0f, 1f),
-        green = (g + m).coerceIn(0f, 1f),
-        blue = (b + m).coerceIn(0f, 1f),
-        alpha = 0.7f
-    )
-}
-
-
 @Composable
 fun AlbumScreen(
     albumWithTracks: AlbumWithTracks,
@@ -98,7 +64,6 @@ fun AlbumScreen(
             if (userId == null) {
                 val session = sessionManager.getSession()
                 currentUserId = session?.email
-                println("[AlbumScreen] Got userId from session: $currentUserId")
             } else {
                 currentUserId = userId
             }
@@ -109,17 +74,13 @@ fun AlbumScreen(
                     val cachedAlbums = AlbumCache.loadAlbums()
                     val isLiked = cachedAlbums?.any { it.id == albumWithTracks.album.id } ?: false
                     isAlbumLiked = isLiked
-                    println("[AlbumScreen] Album ${albumWithTracks.album.id} is liked (from cache): $isLiked")
                 } catch (e: Exception) {
-                    println("[AlbumScreen] Error loading from cache: ${e.message}")
                     isAlbumLiked = false
                 }
             } else {
-                println("[AlbumScreen] Cannot check like status - userId: $userId, albumId: ${albumWithTracks.album.id}")
                 isAlbumLiked = false
             }
         } catch (e: Exception) {
-            println("Error getting session: ${e.message}")
             isAlbumLiked = false
         }
     }
@@ -128,7 +89,6 @@ fun AlbumScreen(
         try {
             val cachedAlbums = AlbumCache.loadAlbums()
             if (cachedAlbums != null && cachedAlbums.size > 10) {
-                println("[AlbumScreen] Clearing cache - found ${cachedAlbums.size} albums, probably all albums instead of liked ones")
                 AlbumCache.saveAlbums(emptyList())
             }
         } catch (e: Exception) {
@@ -136,12 +96,8 @@ fun AlbumScreen(
         }
     }
 
-    LaunchedEffect(isAlbumLiked) {
-        println("[AlbumScreen] isAlbumLiked changed to: $isAlbumLiked")
-    }
 
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
-    val backgroundColor = albumViewModel.getBackgroundColor()
 
     val albumColor = remember(albumWithTracks.album.coverColor) {
         albumWithTracks.album.coverColor?.let { Color(it) } ?: Color(0xFFAAA287)
@@ -261,43 +217,33 @@ fun AlbumScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                println("🔥🔥🔥 [AlbumScreen] Like button clicked! 🔥🔥🔥")
-                                println("[AlbumScreen] isAlbumLiked: $isAlbumLiked")
-                                println("[AlbumScreen] albumId: ${albumWithTracks.album.id}")
-                                println("[AlbumScreen] userId: $currentUserId")
                                 coroutineScope.launch {
                                     try {
                                         val userId = currentUserId
                                         if (!isAlbumLiked && albumWithTracks.album.id != null) {
-                                            println("[AlbumScreen] Liking album ${albumWithTracks.album.id}")
                                             albumRepository.likeAlbum(albumWithTracks.album.id)
                                             
                                             try {
                                                 val currentCached = AlbumCache.loadAlbums() ?: emptyList()
                                                 val updatedCached = currentCached + albumWithTracks.album
                                                 AlbumCache.saveAlbums(updatedCached)
-                                                println("[AlbumScreen] Updated cache with ${updatedCached.size} albums")
                                             } catch (e: Exception) {
                                                 println("[AlbumScreen] Error updating cache: ${e.message}")
                                             }
                                             
                                             isAlbumLiked = true
-                                            println("[AlbumScreen] Album liked successfully")
                                         } else if (isAlbumLiked && albumWithTracks.album.id != null) {
-                                            println("[AlbumScreen] Unliking album ${albumWithTracks.album.id}")
                                             albumRepository.unlikeAlbum(albumWithTracks.album.id)
                                             
                                             try {
                                                 val currentCached = AlbumCache.loadAlbums() ?: emptyList()
                                                 val updatedCached = currentCached.filter { it.id != albumWithTracks.album.id }
                                                 AlbumCache.saveAlbums(updatedCached)
-                                                println("[AlbumScreen] Updated cache with ${updatedCached.size} albums")
                                             } catch (e: Exception) {
                                                 println("[AlbumScreen] Error updating cache: ${e.message}")
                                             }
                                             
                                             isAlbumLiked = false
-                                            println("[AlbumScreen] Album unliked successfully")
                                         } else {
                                             println("[AlbumScreen] Cannot like/unlike - userId: $userId, albumId: ${albumWithTracks.album.id}")
                                         }
