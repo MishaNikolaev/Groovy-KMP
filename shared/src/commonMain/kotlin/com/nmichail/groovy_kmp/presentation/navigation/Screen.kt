@@ -13,4 +13,5 @@ sealed class Screen(val route: String) {
     }
 
     data class Lyrics(val trackId: String) : Screen("lyrics/$trackId")
+    data class Artist(val artistName: String) : Screen("artist/$artistName")
 } 

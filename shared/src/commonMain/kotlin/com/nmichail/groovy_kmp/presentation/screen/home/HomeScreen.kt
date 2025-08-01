@@ -34,7 +34,8 @@ import com.nmichail.groovy_kmp.presentation.screen.home.components.recent.Recent
 
 @Composable
 fun HomeScreen(
-    onMyLikesClick: () -> Unit = {}
+    onMyLikesClick: () -> Unit = {},
+    onArtistClick: (String) -> Unit = {}
 ) {
     val viewModel = remember { getKoin().get<HomeViewModel>() }
     val albums by viewModel.albums.collectAsState()
@@ -124,7 +125,7 @@ fun HomeScreen(
                     Pair("Wham", Res.drawable.wham_example),
                     Pair("Queen", Res.drawable.queen_example)
                 ),
-                onArtistClick = { /* TODO: handle click */ },
+                onArtistClick = onArtistClick,
                 onViewAllClick = { /* TODO */ }
             )
 
@@ -187,20 +188,20 @@ fun HomeScreen(
             AlbumScreen(
                 albumWithTracks = albumWithTracks!!,
                 onBack = { selectedAlbumId = null },
-                onArtistClick = { artistName -> /* TODO: обработка клика по артисту */ },
+                onArtistClick = onArtistClick,
                 onPlayClick = { /* TODO: обработка play */ },
                 onPauseClick = { /* TODO: обработка паузы */ },
                 onTrackClick = { trackId -> /* TODO: обработка клика по треку */ }
             )
         } else {
             Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularProgressIndicator(color = Color.Black)
+        ) {
+            CircularProgressIndicator(color = Color.Black)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "Loading album...",

@@ -15,8 +15,23 @@ class AlbumApi(private val client: HttpClient) {
     suspend fun getAlbum(id: String): Album =
         client.get("/albums/$id").body()
 
-    suspend fun getAlbumsByArtist(artist: String): List<Album> =
-        client.get("/albums/artist/$artist").body()
+    suspend fun getAlbumsByArtist(artist: String): List<Album> {
+        return try {
+            val response = client.get("/albums/artist/$artist")
+            val rawJson = response.bodyAsText()
+            println("Raw albums by artist response for '$artist': $rawJson")
+
+            if (rawJson.isBlank()) {
+                return emptyList()
+            }
+
+            val json = Json { ignoreUnknownKeys = true }
+            json.decodeFromString<List<Album>>(rawJson)
+        } catch (e: Exception) {
+            println("Error getting albums by artist '$artist': ${e.message}")
+            emptyList()
+        }
+    }
 
     suspend fun searchAlbums(query: String): List<Album> =
         client.get("/albums/search") {
@@ -54,7 +69,7 @@ class AlbumApi(private val client: HttpClient) {
             val response = client.get("/albums/liked/$userId")
             val responseText = response.bodyAsText()
             println("[AlbumApi] Raw response: $responseText")
-            
+
             return try {
                 Json.decodeFromString<List<Album>>(responseText)
             } catch (e: Exception) {

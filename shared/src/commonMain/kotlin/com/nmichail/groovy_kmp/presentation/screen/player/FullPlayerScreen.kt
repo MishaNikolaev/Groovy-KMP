@@ -53,6 +53,7 @@ fun FullPlayerScreen(
     progress: Float,
     onBackClick: () -> Unit,
     onBackToAlbumClick: (() -> Unit)? = null,
+    onArtistClick: ((String) -> Unit)? = null,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
     onPreviousClick: () -> Unit,
@@ -255,7 +256,12 @@ fun FullPlayerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 48.dp)
-                    .clickable(enabled = !currentTrack.artist.isNullOrBlank()) { resetUserInteraction() /* TODO: обработка клика по артисту */ },
+                    .clickable(enabled = !currentTrack.artist.isNullOrBlank()) { 
+                        resetUserInteraction()
+                        currentTrack.artist?.let { artist ->
+                            onArtistClick?.invoke(artist)
+                        }
+                    },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -451,14 +457,12 @@ fun FullPlayerScreen(
                         coroutineScope.launch {
                             val cached = TrackCache.loadTracks()?.toMutableList() ?: mutableListOf()
                             if (!isLiked) {
-                                // Лайк: добавить трек в кэш если его нет
                                 if (currentTrack.id != null && cached.none { it.id == currentTrack.id }) {
                                     cached.add(currentTrack)
                                     TrackCache.saveTracks(cached)
                                 }
                                 isLiked = true
                             } else {
-                                // Дизлайк: удалить трек из кэша
                                 val updated = cached.filter { it.id != currentTrack.id }
                                 TrackCache.saveTracks(updated)
                                 isLiked = false

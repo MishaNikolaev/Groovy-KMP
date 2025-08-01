@@ -22,19 +22,31 @@ class HomeViewModel(
 
     fun load() {
         viewModelScope.launch {
-            val cachedAlbums = withContext(Dispatchers.Default) {
-                AllAlbumsCache.loadAllAlbums()
+            // Загружаем альбомы
+            try {
+                val cachedAlbums = withContext(Dispatchers.Default) {
+                    AllAlbumsCache.loadAllAlbums()
+                }
+                if (cachedAlbums != null && cachedAlbums.isNotEmpty()) {
+                    _albums.value = cachedAlbums
+                }
+                val loadedAlbums = albumRepository.getAlbums()
+                _albums.value = loadedAlbums
+                withContext(Dispatchers.Default) {
+                    AllAlbumsCache.saveAllAlbums(loadedAlbums)
+                }
+            } catch (e: Exception) {
+                println("Error loading albums: ${e.message}")
             }
-            if (cachedAlbums != null && cachedAlbums.isNotEmpty()) {
-                _albums.value = cachedAlbums
+            
+            // Загружаем треки отдельно, чтобы ошибка в треках не влияла на альбомы
+            try {
+                val loadedTracks = trackRepository.getTopTracks()
+                _tracks.value = loadedTracks
+            } catch (e: Exception) {
+                println("Error loading top tracks: ${e.message}")
+                // Не устанавливаем пустой список, оставляем предыдущее значение
             }
-            val loadedAlbums = albumRepository.getAlbums()
-            _albums.value = loadedAlbums
-            withContext(Dispatchers.Default) {
-                AllAlbumsCache.saveAllAlbums(loadedAlbums)
-            }
-            val loadedTracks = trackRepository.getTopTracks()
-            _tracks.value = loadedTracks
         }
     }
 }

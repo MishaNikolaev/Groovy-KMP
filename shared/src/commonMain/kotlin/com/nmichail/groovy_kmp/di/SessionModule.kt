@@ -13,6 +13,7 @@ import com.nmichail.groovy_kmp.domain.usecases.GetAlbumWithTracksUseCase
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
 import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
 import com.nmichail.groovy_kmp.presentation.screen.home.components.recent.RecentTracksViewModel
+import com.nmichail.groovy_kmp.presentation.screen.artist.ArtistViewModel
 import org.koin.dsl.module
 
 val sessionModuleCommon = module {
@@ -26,4 +27,5 @@ val sessionModuleCommon = module {
     single { AlbumViewModel(get()) }
     single { RecentTracksViewModel() }
     factory { HomeViewModel(get(), get()) }
+    factory { ArtistViewModel(get(), get()) }
 } 

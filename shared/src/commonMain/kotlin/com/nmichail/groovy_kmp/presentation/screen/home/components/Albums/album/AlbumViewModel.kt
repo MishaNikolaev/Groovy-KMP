@@ -16,7 +16,7 @@ class AlbumViewModel(
     private val viewModelScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val _state = MutableStateFlow<AlbumWithTracks?>(null)
     val state: StateFlow<AlbumWithTracks?> = _state
-    
+
     private var lastLoadedAlbumId: String? = null
     private var albumBackgroundColor: Color = Color(0xFFAAA287)
     private val albumColors = mutableMapOf<String, Color>()
@@ -29,11 +29,11 @@ class AlbumViewModel(
             lastLoadedAlbumId = albumId
             return
         }
-        
+
         if (lastLoadedAlbumId != albumId) {
             _state.value = null
         }
-        
+
         viewModelScope.launch {
             try {
                 println("[AlbumViewModel] Loading album with id: $albumId")
@@ -59,9 +59,9 @@ class AlbumViewModel(
             }
         }
     }
-    
+
     fun getBackgroundColor(): Color = albumBackgroundColor
-    
+
     fun setBackgroundColor(color: Color) {
         albumBackgroundColor = color
     }
@@ -81,36 +81,36 @@ class AlbumViewModel(
         }
         return Color(0xFFAAA287)
     }
-    
+
     fun getAlbumCoverColor(albumId: String?): Color {
         if (albumId == null) return Color(0xFFAAA287)
         val album = albumCache[albumId]
         return album?.album?.coverColor?.let { Color(it) } ?: Color(0xFFAAA287)
     }
-    
+
     private fun generateColorFromUrl(url: String?): Color {
         if (url == null) return Color(0xFFAAA287)
-        
+
         val hash = url.hashCode()
         val hue = (hash % 360).toFloat()
-        
+
         val saturation = when {
             hash % 3 == 0 -> 0.4f
             hash % 3 == 1 -> 0.25f
             else -> 0.15f
         }
-        
+
         val lightness = when {
             hash % 4 == 0 -> 0.35f
             hash % 4 == 1 -> 0.45f
             hash % 4 == 2 -> 0.55f
             else -> 0.4f
         }
-        
+
         val c = (1 - kotlin.math.abs(2 * lightness - 1)) * saturation
         val x = c * (1 - kotlin.math.abs((hue / 60) % 2 - 1))
         val m = lightness - c / 2
-        
+
         val (r, g, b) = when {
             hue < 60 -> Triple(c, x, 0f)
             hue < 120 -> Triple(x, c, 0f)
@@ -119,7 +119,7 @@ class AlbumViewModel(
             hue < 300 -> Triple(x, 0f, c)
             else -> Triple(c, 0f, x)
         }
-        
+
         return Color(
             red = (r + m).coerceIn(0f, 1f),
             green = (g + m).coerceIn(0f, 1f),

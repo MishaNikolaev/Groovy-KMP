@@ -24,6 +24,7 @@ import com.nmichail.groovy_kmp.presentation.screen.profile.ProfileScreen
 import com.nmichail.groovy_kmp.presentation.screen.register.RegisterScreen
 import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
 import com.nmichail.groovy_kmp.presentation.screen.search.SearchScreen
+import com.nmichail.groovy_kmp.presentation.screen.artist.ArtistScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -89,6 +90,8 @@ fun Navigation() {
             )
         }
 
+
+
         scene(route = "main") {
             MainSection(
                 selectedTab = selectedTab,
@@ -129,6 +132,7 @@ private fun MainSection(
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val backgroundColor = albumViewModel.getBackgroundColor()
     var albumIdFromLikes by rememberSaveable { mutableStateOf<String?>(null) }
+    var showArtistScreen by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(currentTrack?.albumId) {
         currentTrack?.albumId?.let { albumId ->
@@ -169,6 +173,11 @@ private fun MainSection(
                 albumIdForReturn = currentTrack.albumId
                 showFullPlayer = false
                 previousScreen = "album"
+            },
+            onArtistClick = { artistName ->
+                showArtistScreen = artistName
+                showFullPlayer = false
+                previousScreen = "artist"
             },
             onPlayPauseClick = {
                 if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack) else playerViewModel.resume(playerInfo.playlist, currentTrack)
@@ -248,7 +257,11 @@ private fun MainSection(
                     AlbumScreen(
                         albumWithTracks = albumWithTracks,
                         onBack = { albumIdForReturn = null },
-                        onArtistClick = {},
+                        onArtistClick = { artistName ->
+                            showArtistScreen = artistName
+                            albumIdForReturn = null
+                            previousScreen = "album"
+                        },
                         onPlayClick = {},
                         onPauseClick = {},
                         onTrackClick = {}
@@ -256,6 +269,51 @@ private fun MainSection(
                 }
             }
         }
+    } else if (showArtistScreen != null) {
+        ArtistScreen(
+            artistName = showArtistScreen!!,
+            onBackClick = { 
+                showArtistScreen = null
+                // Возвращаемся на предыдущий экран
+                previousScreen?.let { screen ->
+                    when (screen) {
+                        "home" -> {
+                            showFavouriteFromHome = false
+                            onTabSelected(Screen.MainSection.Home)
+                        }
+                        "favourite" -> {
+                            onTabSelected(Screen.MainSection.Favourite)
+                        }
+                        "search" -> {
+                            onTabSelected(Screen.MainSection.Search)
+                        }
+                        "profile" -> {
+                            onTabSelected(Screen.MainSection.Profile)
+                        }
+                        "album" -> {
+                        }
+                        "artist" -> {
+                            showFullPlayer = true
+                        }
+                    }
+                }
+                previousScreen = null
+            },
+            onTrackClick = { track ->
+                playerViewModel.play(listOf(track), track)
+            },
+            onAlbumClick = { album ->
+                // TODO: Navigate to album screen
+            },
+            onPlayClick = {
+                // TODO: Play all tracks by artist
+            },
+            onPauseClick = {
+                if (currentTrack != null) {
+                    playerViewModel.pause(playerInfo.playlist, currentTrack)
+                }
+            }
+        )
     } else if (albumIdFromLikes != null) {
         val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
         val albumState by albumViewModel.state.collectAsState()
@@ -305,7 +363,11 @@ private fun MainSection(
                     AlbumScreen(
                         albumWithTracks = albumWithTracks,
                         onBack = { albumIdFromLikes = null },
-                        onArtistClick = {},
+                        onArtistClick = { artistName ->
+                            showArtistScreen = artistName
+                            albumIdFromLikes = null
+                            previousScreen = "album"
+                        },
                         onPlayClick = {},
                         onPauseClick = {},
                         onTrackClick = {}
@@ -375,13 +437,21 @@ private fun MainSection(
                         if (showFavouriteFromHome) {
                             FavouriteScreen(
                                 onMyLikesClick = { showMyLikes = true },
-                                onAlbumsClick = { showMyLikedAlbums = true }
+                                onAlbumsClick = { showMyLikedAlbums = true },
+                                onArtistClick = { artistName ->
+                                    showArtistScreen = artistName
+                                    previousScreen = "favourite"
+                                }
                             )
                         } else {
                             HomeScreen(
                                 onMyLikesClick = { 
                                     showFavouriteFromHome = true
                                     onTabSelected(Screen.MainSection.Favourite)
+                                },
+                                onArtistClick = { artistName ->
+                                    showArtistScreen = artistName
+                                    previousScreen = "home"
                                 }
                             )
                         }
@@ -407,7 +477,11 @@ private fun MainSection(
                         } else {
                             FavouriteScreen(
                                 onMyLikesClick = { showMyLikes = true },
-                                onAlbumsClick = { showMyLikedAlbums = true }
+                                onAlbumsClick = { showMyLikedAlbums = true },
+                                onArtistClick = { artistName ->
+                                    showArtistScreen = artistName
+                                    previousScreen = "favourite"
+                                }
                             )
                         }
                     }

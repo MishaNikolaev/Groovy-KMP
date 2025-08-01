@@ -51,7 +51,8 @@ import com.nmichail.groovy_kmp.data.manager.SessionManager
 @Composable
 fun FavouriteScreen(
     onMyLikesClick: () -> Unit = {},
-    onAlbumsClick: () -> Unit = {}
+    onAlbumsClick: () -> Unit = {},
+    onArtistClick: (String) -> Unit = {}
 ) {
     var likedTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
     var likedAlbums by remember { mutableStateOf<List<Album>>(emptyList()) }
@@ -335,14 +336,14 @@ fun FavouriteScreen(
                                 .align(Alignment.BottomStart)
                         )
                     } else {
-                        Image(
-                            painter = painterResource(Res.drawable.Queen_The_Miracle_example),
-                            contentDescription = "Альбом",
-                            modifier = Modifier
-                                .size(68.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .align(Alignment.BottomStart)
-                        )
+                    Image(
+                        painter = painterResource(Res.drawable.Queen_The_Miracle_example),
+                        contentDescription = "Альбом",
+                        modifier = Modifier
+                            .size(68.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .align(Alignment.BottomStart)
+                    )
                     }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -374,7 +375,7 @@ fun FavouriteScreen(
                 Pair("Wham", Res.drawable.wham_example),
                 Pair("Queen", Res.drawable.queen_example)
             ),
-            onArtistClick = { },
+            onArtistClick = onArtistClick,
             onViewAllClick = { }
         )
         Spacer(modifier = Modifier.height(18.dp))

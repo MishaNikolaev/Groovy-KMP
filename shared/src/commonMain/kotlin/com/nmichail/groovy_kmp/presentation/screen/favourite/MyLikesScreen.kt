@@ -135,9 +135,9 @@ fun MyLikesScreen(
                         onLikeClick = {
                             coroutineScope.launch {
                                 try {
-                                    trackRepository.unlikeTrack(track.id!!)
-                                    likedTracks = likedTracks.filter { it.id != track.id }
-                                    TrackCache.saveTracks(likedTracks)
+                                trackRepository.unlikeTrack(track.id!!)
+                                likedTracks = likedTracks.filter { it.id != track.id }
+                                TrackCache.saveTracks(likedTracks)
                                 } catch (e: Exception) {
                                     println("Error unliking track: ${e.message}")
                                 }
@@ -147,8 +147,8 @@ fun MyLikesScreen(
                             val playerViewModel = getKoin().get<PlayerViewModel>()
                             coroutineScope.launch {
                                 try {
-                                    playerViewModel.setPlaylist(likedTracks, "Liked Tracks")
-                                    playerViewModel.play(likedTracks, track)
+                                playerViewModel.setPlaylist(likedTracks, "Liked Tracks")
+                                playerViewModel.play(likedTracks, track)
                                 } catch (e: Exception) {
                                     println("Error playing track: ${e.message}")
                                 }

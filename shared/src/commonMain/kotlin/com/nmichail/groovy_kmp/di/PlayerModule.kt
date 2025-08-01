@@ -11,10 +11,8 @@ import org.koin.dsl.module
 
 val playerModule = module {
     
-    // Repository
     single<PlayerRepository> { PlayerRepositoryImpl() }
     
-    // Use Cases
     factory { PlayTrackUseCase(get()) }
     factory { PauseTrackUseCase(get()) }
     factory { ResumeTrackUseCase(get()) }
@@ -28,7 +26,7 @@ val playerModule = module {
     factory { GetPlayerInfoFlowUseCase(get()) }
     factory { SetPlaylistUseCase(get()) }
     
-    // ViewModels
+
     factory {
         PlayerUseCases(
             playTrack = get(),
