@@ -9,6 +9,7 @@ Now in progress.
 </div>
 
 
+
 Now:
 - so many bugs in IOS version (especially from images)
 - more features still ain't working
