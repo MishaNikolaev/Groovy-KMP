@@ -26,7 +26,8 @@ expect fun PlatformImage(
     url: String?, 
     contentDescription: String?, 
     modifier: Modifier = Modifier,
-    onColorExtracted: ((Color) -> Unit)? = null
+    onColorExtracted: ((Color) -> Unit)? = null,
+    contentScale: androidx.compose.ui.layout.ContentScale? = null
 )
 
 @Composable

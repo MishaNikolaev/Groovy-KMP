@@ -20,13 +20,15 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import androidx.palette.graphics.Palette
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
 actual fun PlatformImage(
     url: String?, 
     contentDescription: String?, 
     modifier: Modifier,
-    onColorExtracted: ((Color) -> Unit)?
+    onColorExtracted: ((Color) -> Unit)?,
+    contentScale: ContentScale?
 ) {
     if (url != null) {
         var extracted by remember { mutableStateOf(false) }
@@ -60,7 +62,8 @@ actual fun PlatformImage(
         Image(
             painter = painter,
             contentDescription = contentDescription,
-            modifier = modifier.fillMaxSize()
+            modifier = modifier.fillMaxSize(),
+            contentScale = contentScale ?: ContentScale.Crop
         )
     } else {
         Box(

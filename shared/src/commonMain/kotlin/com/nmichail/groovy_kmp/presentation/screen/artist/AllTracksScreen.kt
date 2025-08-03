@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.layout.ContentScale
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
@@ -118,8 +119,13 @@ fun AllTracksScreen(
                     ArtistHeaderSection(
                         artistName = artistName,
                         artistPhotoUrl = state.artistPhotoUrl,
-                        onPlayClick = { /* TODO: Play all tracks */ },
-                        onPauseClick = { /* TODO: Pause */ }
+                        onPlayClick = {
+                            if (state.tracks.isNotEmpty()) {
+                                onTrackClick(state.tracks.first())
+                            }
+                        },
+                        onPauseClick = { /* TODO: Pause */ },
+                        isPlaying = isPlaying
                     )
                 }
                 
@@ -158,7 +164,8 @@ private fun ArtistHeaderSection(
     artistName: String,
     artistPhotoUrl: String?,
     onPlayClick: () -> Unit,
-    onPauseClick: () -> Unit
+    onPauseClick: () -> Unit,
+    isPlaying: Boolean = false
 ) {
     Box(
         modifier = Modifier
@@ -170,13 +177,14 @@ private fun ArtistHeaderSection(
             PlatformImage(
                 url = url,
                 contentDescription = artistName,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
             )
         } ?: run {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Gray)
+                    .background(Color.Black)
             )
         }
         
@@ -204,8 +212,8 @@ private fun ArtistHeaderSection(
         // Action Buttons
         Row(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp),
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 16.dp, end = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Listen Button
@@ -217,12 +225,12 @@ private fun ArtistHeaderSection(
                         .size(48.dp)
                         .clip(CircleShape)
                         .background(Color.Yellow)
-                        .clickable { onPlayClick() },
+                        .clickable { if (isPlaying) onPauseClick() else onPlayClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        Icons.Default.PlayArrow,
-                        contentDescription = "Слушать",
+                        if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isPlaying) "Пауза" else "Слушать",
                         tint = Color.Black,
                         modifier = Modifier.size(24.dp)
                     )

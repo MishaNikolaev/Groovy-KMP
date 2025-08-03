@@ -6,13 +6,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
 actual fun PlatformImage(
     url: String?, 
     contentDescription: String?, 
     modifier: Modifier,
-    onColorExtracted: ((Color) -> Unit)?
+    onColorExtracted: ((Color) -> Unit)?,
+    contentScale: ContentScale?
 ) {
     Box(
         modifier = modifier
