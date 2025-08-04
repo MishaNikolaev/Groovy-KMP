@@ -8,8 +8,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
+
 
 data class TrackGroup(
     val date: String,
@@ -35,7 +34,6 @@ class RecentTracksViewModel() {
                 
                 _tracks.value = history ?: emptyList()
                 
-                // Группируем треки по дням
                 val groups = groupTracksByDate(history ?: emptyList())
                 println("[RecentTracksViewModel] Created ${groups.size} groups")
                 groups.forEach { group ->
@@ -54,28 +52,11 @@ class RecentTracksViewModel() {
     }
     
     private fun groupTracksByDate(tracks: List<Track>): List<TrackGroup> {
-        val dateFormat = SimpleDateFormat("MMMM d", Locale.ENGLISH)
-        
-        val calendar = Calendar.getInstance()
-        val today = calendar.time
-        calendar.add(Calendar.DAY_OF_YEAR, -1)
-        val yesterday = calendar.time
-        
-        println("[RecentTracksViewModel] Grouping ${tracks.size} tracks by date")
-        println("[RecentTracksViewModel] Today: $today, Yesterday: $yesterday")
-        
         val filteredTracks = tracks.filter { it.playedAt != null }
         println("[RecentTracksViewModel] Filtered tracks with playedAt: ${filteredTracks.size}")
         
         val grouped = filteredTracks.groupBy { track ->
-            val trackDate = Date(track.playedAt!!)
-            val dateString = when {
-                isSameDay(trackDate, today) -> "Today"
-                isSameDay(trackDate, yesterday) -> "Yesterday"
-                else -> dateFormat.format(trackDate)
-            }
-            println("[RecentTracksViewModel] Track '${track.title}' played at ${trackDate} -> grouped as '$dateString'")
-            dateString
+            "Recent" // Упрощаем группировку
         }
         
         val result = grouped.map { (date, tracksList) ->
@@ -99,10 +80,5 @@ class RecentTracksViewModel() {
         return result
     }
     
-    private fun isSameDay(date1: Date, date2: Date): Boolean {
-        val cal1 = Calendar.getInstance().apply { time = date1 }
-        val cal2 = Calendar.getInstance().apply { time = date2 }
-        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
-    }
+
 } 

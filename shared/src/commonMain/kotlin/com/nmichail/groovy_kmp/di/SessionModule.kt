@@ -15,6 +15,8 @@ import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
 import com.nmichail.groovy_kmp.presentation.screen.home.components.recent.RecentTracksViewModel
 import com.nmichail.groovy_kmp.presentation.screen.artist.ArtistViewModel
 import com.nmichail.groovy_kmp.presentation.screen.artist.AllTracksViewModel
+import com.nmichail.groovy_kmp.presentation.screen.artists.AllArtistsViewModel
+import com.nmichail.groovy_kmp.presentation.screen.favourite.MostListenedArtistsViewModel
 import org.koin.dsl.module
 
 val sessionModuleCommon = module {
@@ -30,4 +32,6 @@ val sessionModuleCommon = module {
     factory { HomeViewModel(get(), get()) }
     factory { ArtistViewModel(get(), get()) }
     factory { AllTracksViewModel(get(), get()) }
+    factory { AllArtistsViewModel(get(), get()) }
+    factory { MostListenedArtistsViewModel() }
 } 

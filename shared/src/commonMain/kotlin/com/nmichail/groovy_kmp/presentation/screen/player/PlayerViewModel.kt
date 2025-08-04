@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
+
 class PlayerViewModel(
     private val playerUseCases: PlayerUseCases,
     private val musicServiceController: MusicServiceController
@@ -79,9 +80,9 @@ class PlayerViewModel(
         viewModelScope.launch { 
             playerUseCases.playTrack(track)
             try {
-                val trackWithTimestamp = track.copy(playedAt = System.currentTimeMillis())
+                val trackWithTimestamp = track.copy(playedAt = 0L)
                 TrackCache.addToHistory(trackWithTimestamp)
-                println("[PlayerViewModel] Added track '${track.title}' to history at ${trackWithTimestamp.playedAt}")
+                println("[PlayerViewModel] Added track '${track.title}' to history")
             } catch (e: Exception) {
                 println("[PlayerViewModel] Error adding track to history: ${e.message}")
             }

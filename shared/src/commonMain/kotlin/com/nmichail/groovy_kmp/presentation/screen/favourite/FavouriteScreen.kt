@@ -23,7 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.ArtistsSection
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.ArtistsSectionWithPhotos
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.models.Album
@@ -61,6 +61,8 @@ fun FavouriteScreen(
     val trackRepository = remember { getKoin().get<TrackRepository>() }
     val albumRepository = remember { getKoin().get<AlbumRepository>() }
     val sessionManager = remember { getKoin().get<SessionManager>() }
+    val mostListenedArtistsViewModel = remember { getKoin().get<MostListenedArtistsViewModel>() }
+    val mostListenedArtistsState by mostListenedArtistsViewModel.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -82,6 +84,9 @@ fun FavouriteScreen(
                 isLoading = false
             }
         }
+        
+        // Загружаем самых прослушиваемых артистов
+        mostListenedArtistsViewModel.loadMostListenedArtists()
     }
 
     Column(
@@ -368,16 +373,27 @@ fun FavouriteScreen(
         }
         
         Spacer(modifier = Modifier.height(36.dp))
-        ArtistsSection(
-            title = "Most listened to artists",
-            artists = listOf(
-                Pair("Queen", Res.drawable.queen_example),
-                Pair("Wham", Res.drawable.wham_example),
-                Pair("Queen", Res.drawable.queen_example)
-            ),
-            onArtistClick = onArtistClick,
-            onViewAllClick = { }
-        )
+        if (mostListenedArtistsState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFFE94057))
+            }
+        } else if (mostListenedArtistsState.error != null) {
+            Text(
+                text = "Error loading artists: ${mostListenedArtistsState.error}",
+                color = Color.Red,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        } else if (mostListenedArtistsState.artists.isNotEmpty()) {
+            ArtistsSectionWithPhotos(
+                title = "Most listened to artists",
+                artists = mostListenedArtistsState.artists.take(3),
+                onArtistClick = onArtistClick,
+                onViewAllClick = { }
+            )
+        }
         Spacer(modifier = Modifier.height(18.dp))
     }
 }

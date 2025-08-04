@@ -77,7 +77,7 @@ fun ArtistScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = Color.Black)
             }
         } else if (state.error != null) {
             Box(

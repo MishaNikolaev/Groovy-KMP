@@ -21,7 +21,7 @@ import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumU
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.AlbumsSection
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AllAlbumsScreen
-import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.ArtistsSection
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.ArtistsSectionWithPhotos
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Playlists.PlaylistUi
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Playlists.PlaylistsSection
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Playlists_Liked_Heard.PlaylistsLikedHeard
@@ -35,28 +35,33 @@ import com.nmichail.groovy_kmp.presentation.screen.home.components.recent.Recent
 @Composable
 fun HomeScreen(
     onMyLikesClick: () -> Unit = {},
-    onArtistClick: (String) -> Unit = {}
+    onArtistClick: (String) -> Unit = {},
+    onViewAllArtistsClick: () -> Unit = {}
 ) {
     val viewModel = remember { getKoin().get<HomeViewModel>() }
     val albums by viewModel.albums.collectAsState()
+    val artists by viewModel.artists.collectAsState()
     var selectedAlbumId by rememberSaveable { mutableStateOf<String?>(null) }
     var showAllAlbums by rememberSaveable { mutableStateOf(false) }
     var showHistoryScreen by rememberSaveable { mutableStateOf(false) }
+    var showAllArtists by rememberSaveable { mutableStateOf(false) }
 
     val recentTracksViewModel = remember { getKoin().get<RecentTracksViewModel>() }
     val recentTracks by recentTracksViewModel.tracks.collectAsState()
     val lastPlayedTrack = recentTracks.firstOrNull()
     LaunchedEffect(Unit) { recentTracksViewModel.load() }
 
-    BackHandler(enabled = selectedAlbumId != null || showAllAlbums) {
+    BackHandler(enabled = selectedAlbumId != null || showAllAlbums || showAllArtists) {
         if (selectedAlbumId != null) {
             selectedAlbumId = null
         } else if (showAllAlbums) {
             showAllAlbums = false
+        } else if (showAllArtists) {
+            showAllArtists = false
         }
     }
 
-    if (selectedAlbumId == null && !showAllAlbums && !showHistoryScreen) {
+    if (selectedAlbumId == null && !showAllAlbums && !showHistoryScreen && !showAllArtists) {
         LaunchedEffect(viewModel) {
             viewModel.load()
         }
@@ -118,15 +123,11 @@ fun HomeScreen(
                 onViewAllClick = { showAllAlbums = true }
             )
             Spacer(modifier = Modifier.height(24.dp))
-            ArtistsSection(
+            ArtistsSectionWithPhotos(
                 title = "Top artists",
-                artists = listOf(
-                    Pair("Queen", Res.drawable.queen_example),
-                    Pair("Wham", Res.drawable.wham_example),
-                    Pair("Queen", Res.drawable.queen_example)
-                ),
+                artists = artists.take(3),
                 onArtistClick = onArtistClick,
-                onViewAllClick = { /* TODO */ }
+                onViewAllClick = onViewAllArtistsClick
             )
 
             Spacer(modifier = Modifier.height(24.dp))

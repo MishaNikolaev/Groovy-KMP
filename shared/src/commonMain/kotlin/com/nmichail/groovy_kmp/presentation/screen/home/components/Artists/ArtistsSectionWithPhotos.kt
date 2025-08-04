@@ -1,9 +1,11 @@
 package com.nmichail.groovy_kmp.presentation.screen.home.components.Artists
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Icon
@@ -12,18 +14,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
-import org.jetbrains.compose.resources.DrawableResource
-
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
 
 @Composable
-fun ArtistsSection(
+fun ArtistsSectionWithPhotos(
     title: String,
-    artists: List<Pair<String, DrawableResource?>>,
+    artists: List<com.nmichail.groovy_kmp.presentation.screen.artists.ArtistInfo>,
     onArtistClick: (String) -> Unit,
     onViewAllClick: () -> Unit
 ) {
@@ -73,9 +76,58 @@ fun ArtistsSection(
                 .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(28.dp)
         ) {
-            artists.forEach { (name, imageRes) ->
-                ArtistCircle(name, imageRes) { onArtistClick(name) }
+            artists.forEach { artistInfo ->
+                ArtistCircleWithPhoto(artistInfo) { onArtistClick(artistInfo.name) }
             }
         }
     }
 }
+
+@Composable
+fun ArtistCircleWithPhoto(
+    artistInfo: com.nmichail.groovy_kmp.presentation.screen.artists.ArtistInfo,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .width(150.dp)
+            .clickable { onClick() }
+    ) {
+        if (artistInfo.photoUrl != null && artistInfo.photoUrl.isNotBlank()) {
+            PlatformImage(
+                url = artistInfo.photoUrl,
+                contentDescription = artistInfo.name,
+                modifier = Modifier
+                    .size(134.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            // Placeholder circle with first letter
+            Box(
+                modifier = Modifier
+                    .size(134.dp)
+                    .clip(CircleShape)
+                    .background(Color.Gray),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = artistInfo.name.firstOrNull()?.uppercase() ?: "?",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 32.sp
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = artistInfo.name,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = AlbumFontFamily
+            ),
+            maxLines = 2
+        )
+    }
+} 

@@ -20,6 +20,9 @@ class HomeViewModel(
     private val _tracks = MutableStateFlow<List<Track>>(emptyList())
     val tracks: StateFlow<List<Track>> = _tracks
 
+    private val _artists = MutableStateFlow<List<com.nmichail.groovy_kmp.presentation.screen.artists.ArtistInfo>>(emptyList())
+    val artists: StateFlow<List<com.nmichail.groovy_kmp.presentation.screen.artists.ArtistInfo>> = _artists
+
     fun load() {
         viewModelScope.launch {
             // Загружаем альбомы
@@ -39,13 +42,49 @@ class HomeViewModel(
                 println("Error loading albums: ${e.message}")
             }
             
-            // Загружаем треки отдельно, чтобы ошибка в треках не влияла на альбомы
             try {
                 val loadedTracks = trackRepository.getTopTracks()
                 _tracks.value = loadedTracks
             } catch (e: Exception) {
                 println("Error loading top tracks: ${e.message}")
-                // Не устанавливаем пустой список, оставляем предыдущее значение
+            }
+            
+            try {
+                val allTracks = trackRepository.getTracks()
+                
+                // Создаем Map для хранения фоток артистов
+                val artistPhotos = mutableMapOf<String, String?>()
+                
+                // Собираем фотки из альбомов
+                _albums.value.forEach { album ->
+                    album.artist?.let { artistName ->
+                        if (!artistPhotos.containsKey(artistName)) {
+                            artistPhotos[artistName] = album.artistPhotoUrl
+                        }
+                    }
+                }
+                
+                // Собираем фотки из треков (если нет в альбомах)
+                allTracks.forEach { track ->
+                    track.artist?.let { artistName ->
+                        if (!artistPhotos.containsKey(artistName)) {
+                            artistPhotos[artistName] = track.coverUrl
+                        }
+                    }
+                }
+                
+                val allArtists = artistPhotos.map { (name, photoUrl) ->
+                    com.nmichail.groovy_kmp.presentation.screen.artists.ArtistInfo(name, photoUrl)
+                }.sortedBy { it.name }
+                
+                println("[HomeViewModel] Loaded ${allArtists.size} artists:")
+                allArtists.forEach { artist ->
+                    println("[HomeViewModel] Artist: ${artist.name}, Photo: ${artist.photoUrl}")
+                }
+                
+                _artists.value = allArtists
+            } catch (e: Exception) {
+                println("Error loading artists: ${e.message}")
             }
         }
     }

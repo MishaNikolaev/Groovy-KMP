@@ -26,6 +26,7 @@ import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
 import com.nmichail.groovy_kmp.presentation.screen.search.SearchScreen
 import com.nmichail.groovy_kmp.presentation.screen.artist.ArtistScreen
 import com.nmichail.groovy_kmp.presentation.screen.artist.AllTracksScreen
+import com.nmichail.groovy_kmp.presentation.screen.artists.AllArtistsScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -93,6 +94,8 @@ fun Navigation() {
 
 
 
+
+
         scene(route = "main") {
             MainSection(
                 selectedTab = selectedTab,
@@ -136,6 +139,7 @@ private fun MainSection(
     var showArtistScreen by rememberSaveable { mutableStateOf<String?>(null) }
     var albumIdFromArtist by rememberSaveable { mutableStateOf<String?>(null) }
     var showAllTracksScreen by rememberSaveable { mutableStateOf<String?>(null) }
+    var showAllArtistsScreen by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(currentTrack?.albumId) {
         currentTrack?.albumId?.let { albumId ->
@@ -211,6 +215,56 @@ private fun MainSection(
             duration = playerInfo.progress.totalDuration,
             backgroundColor = backgroundColor
         )
+    } else if (showAllArtistsScreen) {
+        Scaffold(
+            bottomBar = {
+                if (currentTrack != null) {
+                    PlayerBar(
+                        currentTrack = currentTrack,
+                        playerState = playerState,
+                        progress = progress,
+                        onPlayerBarClick = {
+                            showFullPlayer = true
+                            previousScreen = "all_artists"
+                        },
+                        onPlayPauseClick = {
+                            if (playerState is PlayerState.Playing) playerViewModel.pause(playerInfo.playlist, currentTrack) else playerViewModel.resume(playerInfo.playlist, currentTrack)
+                        },
+                        onNextClick = {
+                            val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack?.id }
+                            val nextIndex = if (index == -1) 0 else (index + 1) % playerInfo.playlist.size
+                            val nextTrack = playerInfo.playlist.getOrNull(nextIndex)
+                            if (nextTrack != null) playerViewModel.play(playerInfo.playlist, nextTrack)
+                        },
+                        onPreviousClick = {
+                            val index = playerInfo.playlist.indexOfFirst { it.id == currentTrack?.id }
+                            val prevIndex = if (index == -1) 0 else (index - 1 + playerInfo.playlist.size) % playerInfo.playlist.size
+                            val prevTrack = playerInfo.playlist.getOrNull(prevIndex)
+                            if (prevTrack != null) playerViewModel.play(playerInfo.playlist, prevTrack)
+                        },
+                        onTrackProgressChanged = { newProgress ->
+                            val duration = playerInfo.progress.totalDuration
+                            if (duration > 0) {
+                                playerViewModel.onTrackProgressChanged(newProgress)
+                            }
+                        },
+                        backgroundColor = backgroundColor
+                    )
+                }
+            }
+        ) { paddingValues ->
+            Box(modifier = Modifier.padding(paddingValues)) {
+                AllArtistsScreen(
+                    onArtistClick = { artistName ->
+                        showArtistScreen = artistName
+                        showAllArtistsScreen = false
+                    },
+                    onBackClick = {
+                        showAllArtistsScreen = false
+                    }
+                )
+            }
+        }
     } else if (albumIdForReturn != null) {
         val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
         val albumState by albumViewModel.state.collectAsState()
@@ -621,6 +675,9 @@ private fun MainSection(
                                 onArtistClick = { artistName ->
                                     showArtistScreen = artistName
                                     previousScreen = "home"
+                                },
+                                onViewAllArtistsClick = {
+                                    showAllArtistsScreen = true
                                 }
                             )
                         }
