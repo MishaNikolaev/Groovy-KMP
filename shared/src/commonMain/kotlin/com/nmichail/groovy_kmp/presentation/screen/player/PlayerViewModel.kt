@@ -77,6 +77,11 @@ class PlayerViewModel(
     fun play(playlist: List<Track>, track: Track) {
         val index = playlist.indexOfFirst { it.id == track.id }
         musicServiceController.play(playlist, if (index == -1) 0 else index)
+        
+        // Сбрасываем прогресс при начале воспроизведения нового трека
+        _currentPosition.value = 0L
+        _progress.value = 0f
+        
         viewModelScope.launch { 
             playerUseCases.playTrack(track)
             try {
@@ -118,6 +123,9 @@ class PlayerViewModel(
         musicServiceController.next(playlist, nextIndex)
         val nextTrack = playlist.getOrNull(nextIndex)
         if (nextTrack != null) {
+            // Сбрасываем прогресс при переходе к следующему треку
+            _currentPosition.value = 0L
+            _progress.value = 0f
             viewModelScope.launch { playerUseCases.playTrack(nextTrack) }
         }
     }
@@ -128,6 +136,9 @@ class PlayerViewModel(
         musicServiceController.previous(playlist, prevIndex)
         val prevTrack = playlist.getOrNull(prevIndex)
         if (prevTrack != null) {
+            // Сбрасываем прогресс при переходе к предыдущему треку
+            _currentPosition.value = 0L
+            _progress.value = 0f
             viewModelScope.launch { playerUseCases.playTrack(prevTrack) }
         }
     }
@@ -158,5 +169,9 @@ class PlayerViewModel(
         setPlaylist(playlist, playlistName)
         val index = playlist.indexOfFirst { it.id == track.id }
         musicServiceController.play(playlist, if (index == -1) 0 else index)
+        
+        // Сбрасываем прогресс при воспроизведении из альбома
+        _currentPosition.value = 0L
+        _progress.value = 0f
     }
 }
