@@ -47,12 +47,7 @@ fun PlaylistsLikedHeard(
         likedAlbums = cachedAlbums ?: emptyList()
         lastLikedAlbum = likedAlbums.lastOrNull()
         lastPlayedTrackFromHistory = history?.firstOrNull()
-        
-        println("[PlaylistLikedHeard] Loaded ${likedTracks.size} liked tracks, ${likedAlbums.size} liked albums, ${history?.size ?: 0} history tracks")
-        println("[PlaylistLikedHeard] Last played track: ${lastPlayedTrackFromHistory?.title}")
-        println("[PlaylistLikedHeard] Last played track coverColor: ${lastPlayedTrackFromHistory?.coverColor}")
-        println("[PlaylistLikedHeard] Last played track coverUrl: ${lastPlayedTrackFromHistory?.coverUrl}")
-        println("[PlaylistLikedHeard] History tracks details:")
+
         history?.forEachIndexed { index, track ->
             println("[PlaylistLikedHeard] Track $index: ${track.title}, coverColor: ${track.coverColor}, coverUrl: ${track.coverUrl}, playedAt: ${track.playedAt}")
         }
