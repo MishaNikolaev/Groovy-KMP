@@ -2,11 +2,10 @@ It will be music player application with Ktor backend.
 Now in progress. 
 
 **Preview**
-<div style="display: flex; gap: 10px;">
-    <img src="https://github.com/user-attachments/assets/02c2204c-c607-4733-bda0-507689df7387" width="200" style="object-fit: cover;" />
-    <img src="https://github.com/user-attachments/assets/6b8fdeb7-797d-4d8c-bbb6-2619c9a31c71" width="200" style="object-fit: cover;" />
-    <img src="https://github.com/user-attachments/assets/08d1c8c7-ecfa-4567-960f-164547d4b2c3" width="200" style="object-fit: cover;" />
-</div>
+
+
+<img width="661" height="395" alt="Снимок экрана 2025-08-06 в 18 57 23" src="https://github.com/user-attachments/assets/0d3534b0-86ab-4776-bc88-40660c5eb23c" />
+
 
 
 
