@@ -84,6 +84,43 @@ fun ArtistsSectionWithPhotos(
 }
 
 @Composable
+fun ArtistsSectionWithPhotosNoViewAll(
+    title: String,
+    artists: List<com.nmichail.groovy_kmp.presentation.screen.artists.ArtistInfo>,
+    onArtistClick: (String) -> Unit
+) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp,
+                    fontFamily = AlbumFontFamily
+                ),
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(28.dp)
+        ) {
+            artists.forEach { artistInfo ->
+                ArtistCircleWithPhoto(artistInfo) { onArtistClick(artistInfo.name) }
+            }
+        }
+    }
+}
+
+@Composable
 fun ArtistCircleWithPhoto(
     artistInfo: com.nmichail.groovy_kmp.presentation.screen.artists.ArtistInfo,
     onClick: () -> Unit

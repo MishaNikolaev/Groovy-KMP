@@ -35,6 +35,12 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.RepeatMode as AnimationRepeatMode
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
 import com.nmichail.groovy_kmp.domain.models.RepeatMode as PlayerRepeatMode
 import com.nmichail.groovy_kmp.presentation.screen.player.VideoPlayer
@@ -113,6 +119,10 @@ fun FullPlayerScreen(
     val scrollState = rememberScrollState()
     var isLiked by remember(currentTrack.id) { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+    
+    val density = LocalDensity.current
+    val topPadding = with(density) { 8.dp.toPx() }
+    val adaptiveTopPadding = with(density) { (topPadding + 8).toDp() }
 
     LaunchedEffect(currentTrack.id) {
         val cached = TrackCache.loadTracks() ?: emptyList()
@@ -137,9 +147,11 @@ fun FullPlayerScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(adaptiveTopPadding))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -170,7 +182,7 @@ fun FullPlayerScreen(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Box(
                 modifier = Modifier
@@ -235,7 +247,7 @@ fun FullPlayerScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = currentTrack.title ?: "",
                 style = MaterialTheme.typography.headlineSmall.copy(
@@ -249,7 +261,7 @@ fun FullPlayerScreen(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.basicMarquee()
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier
@@ -289,7 +301,7 @@ fun FullPlayerScreen(
                     modifier = Modifier.basicMarquee()
                 )
             }
-            Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -347,7 +359,7 @@ fun FullPlayerScreen(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -399,6 +411,7 @@ fun FullPlayerScreen(
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
             Spacer(modifier = Modifier.weight(1f))
             Row(
                 modifier = Modifier

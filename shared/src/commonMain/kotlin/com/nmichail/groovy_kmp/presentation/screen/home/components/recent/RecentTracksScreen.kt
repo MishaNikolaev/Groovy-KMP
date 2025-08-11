@@ -72,7 +72,6 @@ fun RecentTracksScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Track groups
         items(trackGroups) { group ->
             Column(
                 modifier = Modifier.fillMaxWidth()
@@ -142,7 +141,6 @@ fun RecentTracksScreen(onBack: () -> Unit) {
             }
         }
 
-        // Bottom padding item
         item {
             Spacer(modifier = Modifier.height(40.dp))
         }

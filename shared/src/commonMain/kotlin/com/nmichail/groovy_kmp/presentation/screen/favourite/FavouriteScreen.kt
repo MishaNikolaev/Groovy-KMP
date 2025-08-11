@@ -46,6 +46,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.zIndex
 import com.nmichail.groovy_kmp.data.manager.SessionManager
+import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.ArtistsSectionWithPhotosNoViewAll
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalResourceApi::class)
 @Composable
@@ -59,8 +60,6 @@ fun FavouriteScreen(
     var isLoading by remember { mutableStateOf(true) }
     
     val trackRepository = remember { getKoin().get<TrackRepository>() }
-    val albumRepository = remember { getKoin().get<AlbumRepository>() }
-    val sessionManager = remember { getKoin().get<SessionManager>() }
     val mostListenedArtistsViewModel = remember { getKoin().get<MostListenedArtistsViewModel>() }
     val mostListenedArtistsState by mostListenedArtistsViewModel.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
@@ -85,7 +84,6 @@ fun FavouriteScreen(
             }
         }
         
-        // Загружаем самых прослушиваемых артистов
         mostListenedArtistsViewModel.loadMostListenedArtists()
     }
 
@@ -387,131 +385,12 @@ fun FavouriteScreen(
                 style = MaterialTheme.typography.bodyMedium
             )
         } else if (mostListenedArtistsState.artists.isNotEmpty()) {
-            ArtistsSectionWithPhotos(
+            ArtistsSectionWithPhotosNoViewAll(
                 title = "Most listened to artists",
                 artists = mostListenedArtistsState.artists.take(3),
-                onArtistClick = onArtistClick,
-                onViewAllClick = { }
+                onArtistClick = onArtistClick
             )
         }
         Spacer(modifier = Modifier.height(18.dp))
-    }
-}
-
-@Composable
-fun LikedTrackRow(
-    track: Track,
-    onLikeClick: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clickable { /* TODO: play track */ }
-    ) {
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFFF2F2F2)),
-            contentAlignment = Alignment.Center
-        ) {
-            PlatformImage(
-                url = track.coverUrl,
-                contentDescription = track.title,
-                modifier = Modifier.fillMaxSize(),
-                onColorExtracted = null
-            )
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = track.title ?: "",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = track.artist ?: "",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color.Gray
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        IconButton(onClick = onLikeClick) {
-            Icon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = "Unlike",
-                tint = Color(0xFFE94057),
-                modifier = Modifier.size(28.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun LikedAlbumRow(
-    album: Album,
-    onLikeClick: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clickable { /* TODO: navigate to album */ }
-    ) {
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFFF2F2F2)),
-            contentAlignment = Alignment.Center
-        ) {
-            PlatformImage(
-                url = album.coverUrl,
-                contentDescription = album.title,
-                modifier = Modifier.fillMaxSize(),
-                onColorExtracted = null
-            )
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = album.title ?: "",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = album.artist ?: "",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color.Gray
-                ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        IconButton(onClick = onLikeClick) {
-            Icon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = "Unlike",
-                tint = Color(0xFFE94057),
-                modifier = Modifier.size(28.dp)
-            )
-        }
     }
 }
