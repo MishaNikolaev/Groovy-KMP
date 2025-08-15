@@ -172,7 +172,6 @@ private fun ArtistHeaderSection(
             .fillMaxWidth()
             .height(300.dp)
     ) {
-        // Artist Photo Background
         artistPhotoUrl?.let { url ->
             PlatformImage(
                 url = url,
@@ -188,14 +187,12 @@ private fun ArtistHeaderSection(
             )
         }
         
-        // Gradient overlay
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.3f))
         )
         
-        // Artist Info
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -209,14 +206,12 @@ private fun ArtistHeaderSection(
             )
         }
         
-        // Action Buttons
         Row(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(bottom = 16.dp, end = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Listen Button
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -262,7 +257,6 @@ private fun TrackRow(
             .padding(vertical = 8.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Album Cover
         track.coverUrl?.let { url ->
             PlatformImage(
                 url = url,
@@ -280,7 +274,6 @@ private fun TrackRow(
             )
         }
         
-        // Track Info
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -300,7 +293,6 @@ private fun TrackRow(
             )
         }
         
-        // Like Button
         IconButton(
             onClick = onLikeClick,
             modifier = Modifier.size(32.dp)
