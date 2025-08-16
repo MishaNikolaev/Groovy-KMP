@@ -20,3 +20,5 @@ dependencyResolutionManagement {
 rootProject.name = "Groovy-KMP"
 include(":androidApp")
 include(":shared")
+include(":ui:core")
+include(":data:core")

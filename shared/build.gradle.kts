@@ -66,6 +66,9 @@ kotlin {
                 implementation(compose.components.resources)
                 implementation("moe.tlaster:precompose:1.5.10")
                 implementation("media.kamel:kamel-image:0.5.0")
+                
+                // Data module
+                implementation(project(":data:core"))
 
             }
         }
