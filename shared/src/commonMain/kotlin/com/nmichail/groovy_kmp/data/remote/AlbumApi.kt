@@ -9,11 +9,36 @@ import io.ktor.http.*
 import kotlinx.serialization.json.Json
 
 class AlbumApi(private val client: HttpClient) {
-    suspend fun getAlbums(): List<Album> =
-        client.get("/albums").body()
+    suspend fun getAlbums(): List<Album> {
+        return try {
+            val response = client.get("/albums")
+            val rawJson = response.bodyAsText()
+            println("[AlbumApi] Starting getAlbums() request...")
+            println("[AlbumApi] Raw response: $rawJson")
+            
+            val json = Json { ignoreUnknownKeys = true }
+            val result = json.decodeFromString<List<Album>>(rawJson)
+            println("[AlbumApi] Successfully got ${result.size} albums")
+            result
+        } catch (e: Exception) {
+            println("[AlbumApi] Error getting albums: ${e.message}")
+            emptyList()
+        }
+    }
 
-    suspend fun getAlbum(id: String): Album =
-        client.get("/albums/$id").body()
+    suspend fun getAlbum(id: String): Album {
+        return try {
+            val response = client.get("/albums/$id")
+            val rawJson = response.bodyAsText()
+            println("[AlbumApi] Getting album $id...")
+            
+            val json = Json { ignoreUnknownKeys = true }
+            json.decodeFromString<Album>(rawJson)
+        } catch (e: Exception) {
+            println("[AlbumApi] Error getting album $id: ${e.message}")
+            throw e
+        }
+    }
 
     suspend fun getAlbumsByArtist(artist: String): List<Album> {
         return try {
@@ -33,13 +58,35 @@ class AlbumApi(private val client: HttpClient) {
         }
     }
 
-    suspend fun searchAlbums(query: String): List<Album> =
-        client.get("/albums/search") {
-            parameter("query", query)
-        }.body()
+    suspend fun searchAlbums(query: String): List<Album> {
+        return try {
+            val response = client.get("/albums/search") {
+                parameter("query", query)
+            }
+            val rawJson = response.bodyAsText()
+            println("[AlbumApi] Searching albums with query: $query")
+            
+            val json = Json { ignoreUnknownKeys = true }
+            json.decodeFromString<List<Album>>(rawJson)
+        } catch (e: Exception) {
+            println("[AlbumApi] Error searching albums: ${e.message}")
+            emptyList()
+        }
+    }
 
-    suspend fun getAlbumsByGenre(genre: String): List<Album> =
-        client.get("/albums/genre/$genre").body()
+    suspend fun getAlbumsByGenre(genre: String): List<Album> {
+        return try {
+            val response = client.get("/albums/genre/$genre")
+            val rawJson = response.bodyAsText()
+            println("[AlbumApi] Getting albums by genre: $genre")
+            
+            val json = Json { ignoreUnknownKeys = true }
+            json.decodeFromString<List<Album>>(rawJson)
+        } catch (e: Exception) {
+            println("[AlbumApi] Error getting albums by genre: ${e.message}")
+            emptyList()
+        }
+    }
 
     suspend fun likeAlbum(id: String) {
         println("[AlbumApi] Liking album with id: $id")

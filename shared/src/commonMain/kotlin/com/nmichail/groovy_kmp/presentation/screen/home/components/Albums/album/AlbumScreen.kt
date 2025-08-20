@@ -51,7 +51,7 @@ fun AlbumScreen(
 ) {
     val playerViewModel = remember { getKoin().get<PlayerViewModel>() }
     val playerInfo by playerViewModel.playerInfo.collectAsState()
-    val isPlaying = playerInfo.state is PlayerState.Playing
+                    val isPlaying = playerInfo.state is PlayerState.Playing
     val currentTrack = playerInfo.track
     val albumRepository = remember { getKoin().get<AlbumRepository>() }
     var isAlbumLiked by remember(albumWithTracks.album.id) { mutableStateOf(false) }
@@ -100,7 +100,7 @@ fun AlbumScreen(
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
 
     val albumColor = remember(albumWithTracks.album.coverColor) {
-        albumWithTracks.album.coverColor?.let { Color(it) } ?: Color(0xFFAAA287)
+        Color(0xFFAAA287)
     }
 
     key(albumWithTracks.album.id) {
@@ -180,7 +180,7 @@ fun AlbumScreen(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         val author = albumWithTracks.album.artist ?: ""
-                        val year = albumWithTracks.album.createdAt ?: ""
+                        val year = albumWithTracks.album.createdAt?.toString() ?: ""
                         val authorYear = if (author.isNotBlank() && year.isNotBlank()) "$author · $year" else author + year
                         Row(
                             modifier = Modifier.clickable(enabled = author.isNotBlank()) { albumWithTracks.album.artist?.let { onArtistClick(it) } },
@@ -220,8 +220,9 @@ fun AlbumScreen(
                                 coroutineScope.launch {
                                     try {
                                         val userId = currentUserId
-                                        if (!isAlbumLiked && albumWithTracks.album.id != null) {
-                                            albumRepository.likeAlbum(albumWithTracks.album.id)
+                                        val albumId = albumWithTracks.album.id
+                                        if (!isAlbumLiked && albumId != null) {
+                                            albumRepository.likeAlbum(albumId)
                                             
                                             try {
                                                 val currentCached = AlbumCache.loadAlbums() ?: emptyList()
@@ -232,12 +233,12 @@ fun AlbumScreen(
                                             }
                                             
                                             isAlbumLiked = true
-                                        } else if (isAlbumLiked && albumWithTracks.album.id != null) {
-                                            albumRepository.unlikeAlbum(albumWithTracks.album.id)
+                                        } else if (isAlbumLiked && albumId != null) {
+                                            albumRepository.unlikeAlbum(albumId)
                                             
                                             try {
                                                 val currentCached = AlbumCache.loadAlbums() ?: emptyList()
-                                                val updatedCached = currentCached.filter { it.id != albumWithTracks.album.id }
+                                                val updatedCached = currentCached.filter { it.id != albumId }
                                                 AlbumCache.saveAlbums(updatedCached)
                                             } catch (e: Exception) {
                                                 println("[AlbumScreen] Error updating cache: ${e.message}")
@@ -245,7 +246,7 @@ fun AlbumScreen(
                                             
                                             isAlbumLiked = false
                                         } else {
-                                            println("[AlbumScreen] Cannot like/unlike - userId: $userId, albumId: ${albumWithTracks.album.id}")
+                                            println("[AlbumScreen] Cannot like/unlike - userId: $userId, albumId: $albumId")
                                         }
                                     } catch (e: Exception) {
                                         println("Error toggling album like: ${e.message}")

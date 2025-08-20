@@ -47,6 +47,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.zIndex
 import com.nmichail.groovy_kmp.data.manager.SessionManager
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.ArtistsSectionWithPhotosNoViewAll
+import com.nmichail.groovy_kmp.presentation.screen.artists.ArtistInfo
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalResourceApi::class)
 @Composable
@@ -319,7 +320,7 @@ fun FavouriteScreen(
                     modifier = Modifier.size(width = 80.dp, height = 76.dp)
                 ) {
                     val lastLikedAlbum = likedAlbums.lastOrNull()
-                    val backgroundColor = lastLikedAlbum?.coverColor?.let { Color(it) } ?: Color(0xFFD3D3D3)
+                    val backgroundColor = Color(0xFFD3D3D3)
                     
                     Box(
                         modifier = Modifier
@@ -385,10 +386,11 @@ fun FavouriteScreen(
                 style = MaterialTheme.typography.bodyMedium
             )
         } else if (mostListenedArtistsState.artists.isNotEmpty()) {
+            val artistClickHandler: (String) -> Unit = onArtistClick
             ArtistsSectionWithPhotosNoViewAll(
                 title = "Most listened to artists",
-                artists = mostListenedArtistsState.artists.take(3),
-                onArtistClick = onArtistClick
+                artists = (mostListenedArtistsState.artists as List<ArtistInfo>).take(3),
+                onArtistClick = artistClickHandler
             )
         }
         Spacer(modifier = Modifier.height(18.dp))

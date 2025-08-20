@@ -123,7 +123,6 @@ fun ArtistScreen(
                 )
             }
             
-            // Popular Tracks Section
             if (state.tracks.isNotEmpty()) {
                 item {
                     PopularTracksSection(

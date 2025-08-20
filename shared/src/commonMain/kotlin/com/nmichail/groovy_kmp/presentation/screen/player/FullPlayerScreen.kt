@@ -42,7 +42,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
-import com.nmichail.groovy_kmp.domain.models.RepeatMode as PlayerRepeatMode
 import com.nmichail.groovy_kmp.presentation.screen.player.VideoPlayer
 import org.koin.mp.KoinPlatform.getKoin
 import kotlin.time.TimeSource
@@ -66,7 +65,7 @@ fun FullPlayerScreen(
     onShuffleClick: () -> Unit,
     onRepeatClick: () -> Unit,
     isShuffleEnabled: Boolean = false,
-    repeatMode: PlayerRepeatMode = PlayerRepeatMode.None,
+    repeatMode: RepeatMode = RepeatMode.None,
     currentPosition: Long = 0L,
     duration: Long = 0L,
     backgroundColor: Color = Color.White
@@ -109,15 +108,14 @@ fun FullPlayerScreen(
 
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val albumColor = remember(currentTrack?.coverColor, currentTrack?.albumId) {
-        currentTrack?.coverColor?.let { Color(it) }
-            ?: albumViewModel.getAlbumCoverColor(currentTrack?.albumId)
+        albumViewModel.getAlbumCoverColor(currentTrack?.albumId)
     }
     val albumState by albumViewModel.state.collectAsState()
     val currentAlbum = if (albumState?.album?.id == currentTrack.albumId) albumState?.album else null
     val artistPhotoUrl = currentAlbum?.artistPhotoUrl
 
     val scrollState = rememberScrollState()
-    var isLiked by remember(currentTrack.id) { mutableStateOf(false) }
+    var isLiked by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     
     val density = LocalDensity.current
@@ -132,7 +130,7 @@ fun FullPlayerScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         if (showVideo && currentTrack.videoUrl != null) {
             VideoPlayer(
-                uri = currentTrack.videoUrl,
+                uri = currentTrack.videoUrl!!,
                 modifier = Modifier.fillMaxSize()
             )
         } else {
@@ -190,7 +188,8 @@ fun FullPlayerScreen(
                     .clip(RoundedCornerShape(18.dp))
             ) {
                 if (showLyrics && currentTrack.lyrics != null) {
-                    val lyrics = currentTrack.lyrics.lines
+                    val lyrics = currentTrack.lyrics!!
+                    val lyricsText = lyrics.lines.joinToString("\n") { it.text }
                     val infiniteTransition = rememberInfiniteTransition()
                     val animatedAlpha by infiniteTransition.animateFloat(
                         initialValue = 0.4f,
@@ -200,38 +199,24 @@ fun FullPlayerScreen(
                             repeatMode = AnimationRepeatMode.Reverse
                         )
                     )
-                    val maxTime = lyrics.filter { it.timeMs <= currentPosition }.maxOfOrNull { it.timeMs } ?: 0L
-                    val activeIndices = lyrics.withIndex().filter { it.value.timeMs == maxTime }.map { it.index }
+                    
+                    // Simple lyrics display since we don't have structured lyrics with timeMs
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        val centerIndex = activeIndices.firstOrNull() ?: 0
-                        val visibleLines = (-1..1).map { offset -> centerIndex + offset }
-                        visibleLines.forEach { idx ->
-                            val line = lyrics.getOrNull(idx)
-                            if (line != null) {
-                                val isActive = idx in activeIndices
-                                val isDots = line.text.trim().replace(" ", "").replace("…", ".").all { it == '.' }
-                                println("[LYRICS] line='${line.text}' isActive=$isActive isDots=$isDots")
-                                Text(
-                                    text = line.text,
-                                    fontFamily = AlbumFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = when {
-                                        isActive && isDots -> 80.sp
-                                        isActive -> 32.sp
-                                        else -> 22.sp
-                                    },
-                                    color = if (isActive) Color.White else Color.White.copy(alpha = 0.4f),
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .padding(vertical = 2.dp)
-                                        .alpha(if (isActive && isDots) animatedAlpha else 1f)
-                                )
-                            }
-                        }
+                        Text(
+                            text = lyricsText.ifEmpty { "No lyrics available" },
+                            fontFamily = AlbumFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 24.sp,
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .alpha(animatedAlpha)
+                        )
                     }
                 } else if (!showVideo) {
                     PlatformImage(
@@ -423,9 +408,9 @@ fun FullPlayerScreen(
                 IconButton(onClick = { onRepeatClick() }, modifier = Modifier.size(40.dp)) {
                     Icon(
                         imageVector = when (repeatMode) {
-                            PlayerRepeatMode.None -> Icons.Filled.Repeat
-                            PlayerRepeatMode.One -> Icons.Filled.RepeatOne
-                            PlayerRepeatMode.All -> Icons.Filled.Repeat
+                            RepeatMode.None -> Icons.Filled.Repeat
+                            RepeatMode.One -> Icons.Filled.RepeatOne
+                            RepeatMode.All -> Icons.Filled.Repeat
                             else -> Icons.Filled.Repeat
                         },
                         contentDescription = "Repeat",
@@ -469,7 +454,7 @@ fun FullPlayerScreen(
                         coroutineScope.launch {
                             val cached = TrackCache.loadTracks()?.toMutableList() ?: mutableListOf()
                             if (!isLiked) {
-                                if (currentTrack.id != null && cached.none { it.id == currentTrack.id }) {
+                                if (cached.none { it.id == currentTrack.id }) {
                                     cached.add(currentTrack)
                                     TrackCache.saveTracks(cached)
                                 }

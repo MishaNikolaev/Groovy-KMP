@@ -24,6 +24,7 @@ val playerModule = module {
     factory { ToggleShuffleUseCase(get()) }
     factory { ToggleRepeatModeUseCase(get()) }
     factory { GetPlayerInfoFlowUseCase(get()) }
+
     factory { SetPlaylistUseCase(get()) }
     
 
@@ -43,14 +44,6 @@ val playerModule = module {
             setPlaylist = get()
         )
     }
-    single<MusicServiceController> { object : MusicServiceController {
-        override fun play(playlist: List<Track>, index: Int) {}
-        override fun pause(playlist: List<Track>, index: Int) {}
-        override fun resume(playlist: List<Track>, index: Int) {}
-        override fun next(playlist: List<Track>, index: Int) {}
-        override fun previous(playlist: List<Track>, index: Int) {}
-        override fun seekTo(playlist: List<Track>, index: Int, position: Long) {}
-    } }
     factory { PlayerViewModel(get(), get()) }
     factory { RecentTracksViewModel() }
 } 

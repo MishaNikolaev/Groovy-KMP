@@ -45,8 +45,7 @@ fun PlayerBar(
 
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val albumColor = remember(currentTrack?.coverColor, currentTrack?.albumId) {
-        currentTrack?.coverColor?.let { Color(it) }
-            ?: albumViewModel.getAlbumCoverColor(currentTrack?.albumId)
+        albumViewModel.getAlbumCoverColor(currentTrack?.albumId)
     }
 
     var isDragging by remember { mutableStateOf(false) }

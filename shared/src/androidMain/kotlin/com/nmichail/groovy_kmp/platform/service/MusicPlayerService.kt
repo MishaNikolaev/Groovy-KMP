@@ -53,17 +53,17 @@ class MusicPlayerService : Service() {
 
     private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
         override fun onPause() {
-            if (playerViewModel.playerInfo.value.state is PlayerState.Paused) {
-                android.util.Log.d("MusicPlayerService", "mediaSessionCallback.onPause: already paused, skip")
-                return
-            }
+                    if (playerViewModel.playerInfo.value.state is PlayerState.Paused) {
+            android.util.Log.d("MusicPlayerService", "mediaSessionCallback.onPause: already paused, skip")
+            return
+        }
             pauseAudioPlayback()
         }
         override fun onPlay() {
-            if (playerViewModel.playerInfo.value.state is PlayerState.Playing) {
-                android.util.Log.d("MusicPlayerService", "mediaSessionCallback.onPlay: already playing, skip")
-                return
-            }
+                    if (playerViewModel.playerInfo.value.state is PlayerState.Playing) {
+            android.util.Log.d("MusicPlayerService", "mediaSessionCallback.onPlay: already playing, skip")
+            return
+        }
             resumeAudioPlayback()
         }
         override fun onSkipToNext() {

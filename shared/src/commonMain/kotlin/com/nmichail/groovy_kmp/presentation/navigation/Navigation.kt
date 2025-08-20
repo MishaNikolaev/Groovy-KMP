@@ -64,8 +64,8 @@ fun Navigation() {
                                 val user = loginViewModel.getUser()
                                 val token = loginViewModel.getToken()
                                 if (user != null && token != null) {
-                                    sessionManager.saveSession(UserSession(user.email, user.username, token))
-                                    userSession = UserSession(user.email, user.username, token)
+                                    sessionManager.saveSession(UserSession(user.email, user.username ?: user.email, token))
+                                    userSession = UserSession(user.email, user.username ?: user.email, token)
                                 }
                                 navigator.navigate("main")
                                 selectedTab = Screen.MainSection.Home

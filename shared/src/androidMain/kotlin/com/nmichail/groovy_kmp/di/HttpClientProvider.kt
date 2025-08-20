@@ -33,5 +33,6 @@ actual fun provideHttpClient(): HttpClient = HttpClient(OkHttp) {
         }
         header("Content-Type", "application/json")
         header("Accept", "application/json")
+        println("[HttpClient] Configured with host: ${getServerHost()}:8080")
     }
 }

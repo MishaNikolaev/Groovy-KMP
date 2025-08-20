@@ -105,7 +105,7 @@ fun PlaylistPreview(
                 modifier = Modifier
                     .size(68.dp)
                     .clip(MaterialTheme.shapes.medium)
-                    .background(coverColor?.let { Color(it) } ?: Color(0xFFE5BDBD))
+                    .background(if (coverColor != null) Color(coverColor) else Color(0xFFE5BDBD))
                     .align(Alignment.BottomEnd)
             ) {
                 if (coverColor != null) {

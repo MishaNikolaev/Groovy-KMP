@@ -38,7 +38,7 @@ fun RecentTracksScreen(onBack: () -> Unit) {
 
     val playerViewModel = remember { getKoin().get<PlayerViewModel>() }
     val playerInfo by playerViewModel.playerInfo.collectAsState()
-    val isPlaying = playerInfo.state is PlayerState.Playing
+            val isPlaying = playerInfo.state is PlayerState.Playing
     val currentTrack = playerInfo.track
     val coroutineScope = rememberCoroutineScope()
 

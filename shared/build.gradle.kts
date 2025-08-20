@@ -69,6 +69,8 @@ kotlin {
                 
                 // Data module
                 implementation(project(":data:core"))
+                // Domain module
+                implementation(project(":domain"))
 
             }
         }

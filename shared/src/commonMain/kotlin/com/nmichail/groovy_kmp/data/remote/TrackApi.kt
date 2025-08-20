@@ -11,8 +11,19 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 
 class TrackApi(private val client: HttpClient) {
-    suspend fun getTracks(): List<Track> =
-        client.get("/tracks").body()
+    suspend fun getTracks(): List<Track> {
+        return try {
+            val response = client.get("/tracks")
+            val rawJson = response.bodyAsText()
+            println("[TrackApi] Getting all tracks...")
+            
+            val json = Json { ignoreUnknownKeys = true }
+            json.decodeFromString<List<Track>>(rawJson)
+        } catch (e: Exception) {
+            println("[TrackApi] Error getting tracks: ${e.message}")
+            emptyList()
+        }
+    }
 
     suspend fun getTrack(id: String): Track =
         client.get("/tracks/$id").body()

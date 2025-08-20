@@ -65,24 +65,23 @@ class PlayerViewModel(
         if (duration > 0) {
             val newPosition = (duration * newProgress).toLong()
             _currentPosition.value = newPosition
-            val playlist = playerInfo.playlist
-            val index = playlist.indexOfFirst { it.id == playerInfo.track?.id }
-            musicServiceController.seekTo(playlist, if (index == -1) 0 else index, newPosition)
-            viewModelScope.launch {
-                playerUseCases.seekTo(newPosition)
+            val currentTrack = playerInfo.track
+            if (currentTrack != null) {
+                viewModelScope.launch {
+                    musicServiceController.seekTo(currentTrack, newPosition)
+                    playerUseCases.seekTo(newPosition)
+                }
             }
         }
     }
 
     fun play(playlist: List<Track>, track: Track) {
-        val index = playlist.indexOfFirst { it.id == track.id }
-        musicServiceController.play(playlist, if (index == -1) 0 else index)
-        
         // Сбрасываем прогресс при начале воспроизведения нового трека
         _currentPosition.value = 0L
         _progress.value = 0f
         
         viewModelScope.launch { 
+            musicServiceController.play(track)
             playerUseCases.playTrack(track)
             try {
                 val trackWithTimestamp = track.copy(playedAt = 0L)
@@ -96,16 +95,16 @@ class PlayerViewModel(
 
     fun pause(playlist: List<Track>, track: Track) {
         println("[PlayerViewModel] pause() called, playlist size: ${playlist.size}, track: ${track.title}")
-        val index = playlist.indexOfFirst { it.id == track.id }
-        musicServiceController.pause(playlist, if (index == -1) 0 else index)
-        viewModelScope.launch { playerUseCases.pauseTrack() }
+        viewModelScope.launch { 
+            musicServiceController.pause(track)
+            playerUseCases.pauseTrack()
+        }
     }
 
     fun resume(playlist: List<Track>, track: Track) {
         println("[PlayerViewModel] resume() called, playlist size: ${playlist.size}, track: ${track.title}")
-        val index = playlist.indexOfFirst { it.id == track.id }
-        musicServiceController.resume(playlist, if (index == -1) 0 else index)
         viewModelScope.launch {
+            musicServiceController.resume(track)
             println("[PlayerViewModel] launching playerUseCases.resumeTrack() for track: ${track.title}")
             playerUseCases.resumeTrack()
         }
@@ -120,32 +119,39 @@ class PlayerViewModel(
     fun skipToNext(playlist: List<Track>, track: Track) {
         val index = playlist.indexOfFirst { it.id == track.id }
         val nextIndex = if (index == -1) 0 else (index + 1) % playlist.size
-        musicServiceController.next(playlist, nextIndex)
         val nextTrack = playlist.getOrNull(nextIndex)
         if (nextTrack != null) {
             // Сбрасываем прогресс при переходе к следующему треку
             _currentPosition.value = 0L
             _progress.value = 0f
-            viewModelScope.launch { playerUseCases.playTrack(nextTrack) }
+            viewModelScope.launch { 
+                musicServiceController.next(track)
+                playerUseCases.playTrack(nextTrack)
+            }
         }
     }
 
     fun skipToPrevious(playlist: List<Track>, track: Track) {
         val index = playlist.indexOfFirst { it.id == track.id }
         val prevIndex = if (index == -1) 0 else (index - 1 + playlist.size) % playlist.size
-        musicServiceController.previous(playlist, prevIndex)
         val prevTrack = playlist.getOrNull(prevIndex)
         if (prevTrack != null) {
             // Сбрасываем прогресс при переходе к предыдущему треку
             _currentPosition.value = 0L
             _progress.value = 0f
-            viewModelScope.launch { playerUseCases.playTrack(prevTrack) }
+            viewModelScope.launch { 
+                musicServiceController.previous(track)
+                playerUseCases.playTrack(prevTrack)
+            }
         }
     }
 
     fun updateTrackDuration(duration: Long) {
-        viewModelScope.launch {
-            playerUseCases.updateTrackDuration(duration)
+        val currentTrack = _playerInfo.value.track
+        if (currentTrack != null) {
+            viewModelScope.launch {
+                playerUseCases.updateTrackDuration(duration)
+            }
         }
     }
 
@@ -167,11 +173,13 @@ class PlayerViewModel(
 
     fun playFromAlbum(playlist: List<Track>, track: Track, playlistName: String) {
         setPlaylist(playlist, playlistName)
-        val index = playlist.indexOfFirst { it.id == track.id }
-        musicServiceController.play(playlist, if (index == -1) 0 else index)
         
         // Сбрасываем прогресс при воспроизведении из альбома
         _currentPosition.value = 0L
         _progress.value = 0f
+        
+        viewModelScope.launch {
+            musicServiceController.play(track)
+        }
     }
 }
