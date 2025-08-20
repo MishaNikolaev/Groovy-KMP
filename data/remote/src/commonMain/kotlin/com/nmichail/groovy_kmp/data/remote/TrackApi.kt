@@ -17,14 +17,25 @@ class TrackApi(private val client: HttpClient) {
     suspend fun getTracks(): List<Track> {
         return try {
             println("[TrackApi] Getting all tracks from $baseUrl/tracks")
+            
+            // First check if server is accessible
+            val isConnected = checkServerConnectivity(client, baseUrl)
+            if (!isConnected) {
+                println("[TrackApi] Server is not accessible, returning empty list")
+                return emptyList()
+            }
+            
             val response = client.get("$baseUrl/tracks")
             val rawJson = response.bodyAsText()
-            println("[TrackApi] Getting all tracks...")
+            println("[TrackApi] Raw response: $rawJson")
             
             val json = Json { ignoreUnknownKeys = true }
-            json.decodeFromString<List<Track>>(rawJson)
+            val tracks = json.decodeFromString<List<Track>>(rawJson)
+            println("[TrackApi] Successfully parsed ${tracks.size} tracks")
+            tracks
         } catch (e: Exception) {
             println("[TrackApi] Error getting tracks: ${e.message}")
+            e.printStackTrace()
             emptyList()
         }
     }

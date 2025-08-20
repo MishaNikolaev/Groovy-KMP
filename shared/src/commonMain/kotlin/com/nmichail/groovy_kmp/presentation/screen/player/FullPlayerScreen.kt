@@ -110,13 +110,42 @@ fun FullPlayerScreen(
     }
 
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
-    val albumColor = remember(currentTrack?.coverColor, currentTrack?.albumId) {
-        val color = currentTrack?.coverColor?.let { Color(it) } ?: albumViewModel.getAlbumCoverColor(currentTrack?.albumId)
-        println("[FullPlayerScreen] Using albumColor: $color for track: ${currentTrack?.title}, albumId: ${currentTrack?.albumId}")
-        color
-    }
     val albumState by albumViewModel.state.collectAsState()
-    val currentAlbum = if (albumState?.album?.id == currentTrack.albumId) albumState?.album else null
+    
+    // Get the current album from state if it matches the track's album
+    val currentAlbum = if (albumState?.album?.id == currentTrack?.albumId) albumState?.album else null
+    
+    var albumColor by remember(currentTrack?.coverColor, currentTrack?.albumId, currentAlbum?.coverColor) {
+        val initialColor = currentTrack?.coverColor?.let { Color(it) } 
+            ?: currentAlbum?.coverColor?.let { Color(it) }
+            ?: albumViewModel.getAlbumCoverColor(currentTrack?.albumId) 
+            ?: Color(0xFFAAA287)
+        println("[FullPlayerScreen] Initial albumColor: $initialColor for track: ${currentTrack?.title}, albumId: ${currentTrack?.albumId}")
+        mutableStateOf(initialColor)
+    }
+    
+    // Update color when it changes in AlbumViewModel
+    LaunchedEffect(currentTrack?.albumId) {
+        currentTrack?.albumId?.let { albumId ->
+            val storedColor = albumViewModel.getAlbumCoverColor(albumId)
+            if (storedColor != Color(0xFFAAA287)) {
+                albumColor = storedColor
+                println("[FullPlayerScreen] Updated albumColor from stored: $storedColor for album $albumId")
+            }
+        }
+    }
+    
+    // Update color when track changes
+    LaunchedEffect(currentTrack?.id) {
+        currentTrack?.let { track ->
+            val newColor = track.coverColor?.let { Color(it) } 
+                ?: currentAlbum?.coverColor?.let { Color(it) }
+                ?: albumViewModel.getAlbumCoverColor(track.albumId) 
+                ?: Color(0xFFAAA287)
+            albumColor = newColor
+            println("[FullPlayerScreen] Updated albumColor for new track: $newColor for track: ${track.title}")
+        }
+    }
     val artistPhotoUrl = currentAlbum?.artistPhotoUrl
 
     key(currentTrack?.id) {
@@ -128,11 +157,14 @@ fun FullPlayerScreen(
             onColorExtracted = { color ->
                 currentTrack?.albumId?.let {
                     albumViewModel.setAlbumColor(it, color)
-                    println("[FullPlayerScreen] Color extracted and saved for album $it: $color")
+                    albumColor = color
+                    println("[FullPlayerScreen] Color extracted from invisible cover: $color for album $it")
                 }
             }
         )
     }
+
+
 
 
 
@@ -252,6 +284,8 @@ fun FullPlayerScreen(
                         onColorExtracted = { color ->
                             currentTrack.albumId?.let {
                                 albumViewModel.setAlbumColor(it, color)
+                                albumColor = color
+                                println("[FullPlayerScreen] Color extracted from visible cover: $color for album $it")
                             }
                         }
                     )

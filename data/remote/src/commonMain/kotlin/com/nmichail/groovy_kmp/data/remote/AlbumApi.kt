@@ -15,9 +15,16 @@ class AlbumApi(private val client: HttpClient) {
     suspend fun getAlbums(): List<Album> {
         return try {
             println("[AlbumApi] Starting getAlbums() request to $baseUrl/albums")
+            
+            // First check if server is accessible
+            val isConnected = checkServerConnectivity(client, baseUrl)
+            if (!isConnected) {
+                println("[AlbumApi] Server is not accessible, returning empty list")
+                return emptyList()
+            }
+            
             val response = client.get("$baseUrl/albums")
             val rawJson = response.bodyAsText()
-            println("[AlbumApi] Starting getAlbums() request...")
             println("[AlbumApi] Raw response: $rawJson")
             
             val json = Json { ignoreUnknownKeys = true }
@@ -26,6 +33,7 @@ class AlbumApi(private val client: HttpClient) {
             result
         } catch (e: Exception) {
             println("[AlbumApi] Error getting albums: ${e.message}")
+            e.printStackTrace()
             emptyList()
         }
     }
