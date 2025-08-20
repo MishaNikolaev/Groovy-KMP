@@ -52,8 +52,14 @@ kotlin {
             }
         }
         
+        val commonTest by getting {
+            dependencies {
+                // Test dependencies if needed
+            }
+        }
+        
         val iosTest by creating {
-            dependsOn(commonMain)
+            dependsOn(commonTest)
         }
         
         val iosX64Main by getting
@@ -81,7 +87,13 @@ android {
     }
     
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
     }
 }

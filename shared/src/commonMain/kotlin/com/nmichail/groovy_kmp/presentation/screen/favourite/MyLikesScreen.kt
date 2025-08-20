@@ -31,8 +31,8 @@ import androidx.compose.ui.unit.sp
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.models.Album
-import com.nmichail.groovy_kmp.data.local.TrackCache
-import com.nmichail.groovy_kmp.data.local.AlbumCache
+// Data imports removed - these should be injected through DI
+// Data imports removed - these should be injected through DI
 import com.nmichail.groovy_kmp.domain.repository.TrackRepository
 import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
@@ -64,9 +64,25 @@ fun MyLikesScreen(
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             try {
-                val cachedTracks = TrackCache.loadTracks()
-                likedTracks = cachedTracks ?: emptyList()
+                // Load liked tracks from local storage
+                val trackRepository = getKoin().get<TrackRepository>()
+                val allTracks = trackRepository.getTracks()
+                val likedTrackIds = mutableListOf<String>()
+                
+                // Get liked track IDs from local storage
+                for (track in allTracks) {
+                    if (trackRepository.isTrackLiked(track.id ?: "")) {
+                        likedTrackIds.add(track.id ?: "")
+                    }
+                }
+                
+                // Filter tracks that are liked
+                likedTracks = allTracks.filter { track -> 
+                    track.id != null && likedTrackIds.contains(track.id)
+                }
+                println("[MyLikesScreen] Loaded ${likedTracks.size} liked tracks from local storage")
             } catch (e: Exception) {
+                println("[MyLikesScreen] Error loading liked tracks: ${e.message}")
                 likedTracks = emptyList()
             } finally {
                 isLoading = false
@@ -137,7 +153,7 @@ fun MyLikesScreen(
                                 try {
                                 trackRepository.unlikeTrack(track.id!!)
                                 likedTracks = likedTracks.filter { it.id != track.id }
-                                TrackCache.saveTracks(likedTracks)
+                                // TrackCache.saveTracks(likedTracks)
                                 } catch (e: Exception) {
                                     println("Error unliking track: ${e.message}")
                                 }
@@ -300,9 +316,20 @@ fun MyLikedAlbumsScreen(
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             try {
-                val cachedAlbums = AlbumCache.loadAlbums()
-                likedAlbums = cachedAlbums ?: emptyList()
+                // Load liked albums from local storage
+                val allAlbums = albumRepository.getAlbums()
+                val likedAlbumIds = mutableListOf<String>()
+                for (album in allAlbums) {
+                    if (albumRepository.isAlbumLiked(album.id ?: "")) {
+                        likedAlbumIds.add(album.id ?: "")
+                    }
+                }
+                likedAlbums = allAlbums.filter { album -> 
+                    album.id != null && likedAlbumIds.contains(album.id)
+                }
+                println("[MyLikedAlbumsScreen] Loaded ${likedAlbums.size} liked albums from local storage")
             } catch (e: Exception) {
+                println("[MyLikedAlbumsScreen] Error loading liked albums: ${e.message}")
                 likedAlbums = emptyList()
             } finally {
                 isLoading = false
@@ -375,9 +402,9 @@ fun MyLikedAlbumsScreen(
                                 try {
                                     albumRepository.unlikeAlbum(album.id!!)
                                     likedAlbums = likedAlbums.filter { it.id != album.id }
-                                    AlbumCache.saveAlbums(likedAlbums)
+                                    println("[MyLikedAlbumsScreen] Unliked album: ${album.title}")
                                 } catch (e: Exception) {
-                                    println("Error unliking album: ${e.message}")
+                                    println("[MyLikedAlbumsScreen] Error unliking album: ${e.message}")
                                 }
                             }
                         },

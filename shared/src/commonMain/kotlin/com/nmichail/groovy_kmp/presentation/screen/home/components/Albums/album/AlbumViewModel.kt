@@ -69,12 +69,14 @@ class AlbumViewModel(
             return
         }
         albumColors[albumId] = color
+        println("[AlbumViewModel] Color saved for album $albumId: $color")
     }
 
     fun getAlbumCoverColor(albumId: String?): Color {
         if (albumId == null) return Color(0xFFAAA287)
-        val album = albumCache[albumId]
-        return Color(0xFFAAA287)
+        val color = albumColors[albumId] ?: Color(0xFFAAA287)
+        println("[AlbumViewModel] Getting color for album $albumId: $color")
+        return color
     }
 
     private fun generateColorFromUrl(url: String?): Color {

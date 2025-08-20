@@ -15,4 +15,6 @@ interface TrackRepository {
     suspend fun unlikeTrack(id: String)
     suspend fun playTrack(id: String)
     suspend fun getTrackPlayCount(id: String): Int
+    suspend fun addToHistory(track: Track)
+    suspend fun isTrackLiked(id: String): Boolean
 } 

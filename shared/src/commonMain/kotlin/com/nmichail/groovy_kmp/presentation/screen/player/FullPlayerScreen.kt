@@ -46,7 +46,7 @@ import com.nmichail.groovy_kmp.presentation.screen.player.VideoPlayer
 import org.koin.mp.KoinPlatform.getKoin
 import kotlin.time.TimeSource
 import kotlin.time.Duration.Companion.milliseconds
-import com.nmichail.groovy_kmp.data.local.TrackCache
+import com.nmichail.groovy_kmp.domain.repository.TrackRepository
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -70,6 +70,9 @@ fun FullPlayerScreen(
     duration: Long = 0L,
     backgroundColor: Color = Color.White
 ) {
+    val trackRepository = remember { getKoin().get<TrackRepository>() }
+    val coroutineScope = rememberCoroutineScope()
+    
     if (currentTrack == null) return
 
     val animatedProgress by animateFloatAsState(
@@ -108,23 +111,46 @@ fun FullPlayerScreen(
 
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val albumColor = remember(currentTrack?.coverColor, currentTrack?.albumId) {
-        albumViewModel.getAlbumCoverColor(currentTrack?.albumId)
+        val color = currentTrack?.coverColor?.let { Color(it) } ?: albumViewModel.getAlbumCoverColor(currentTrack?.albumId)
+        println("[FullPlayerScreen] Using albumColor: $color for track: ${currentTrack?.title}, albumId: ${currentTrack?.albumId}")
+        color
     }
     val albumState by albumViewModel.state.collectAsState()
     val currentAlbum = if (albumState?.album?.id == currentTrack.albumId) albumState?.album else null
     val artistPhotoUrl = currentAlbum?.artistPhotoUrl
 
+    key(currentTrack?.id) {
+        // Always extract color from cover image
+        PlatformImage(
+            url = currentTrack?.coverUrl,
+            contentDescription = null,
+            modifier = Modifier.size(1.dp).alpha(0f),
+            onColorExtracted = { color ->
+                currentTrack?.albumId?.let {
+                    albumViewModel.setAlbumColor(it, color)
+                    println("[FullPlayerScreen] Color extracted and saved for album $it: $color")
+                }
+            }
+        )
+    }
+
+
+
     val scrollState = rememberScrollState()
     var isLiked by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
     
     val density = LocalDensity.current
     val topPadding = with(density) { 8.dp.toPx() }
     val adaptiveTopPadding = with(density) { (topPadding + 8).toDp() }
 
     LaunchedEffect(currentTrack.id) {
-        val cached = TrackCache.loadTracks() ?: emptyList()
-        isLiked = cached.any { it.id == currentTrack.id }
+        try {
+            isLiked = trackRepository.isTrackLiked(currentTrack.id ?: "")
+            println("[FullPlayerScreen] Track ${currentTrack.title} liked status: $isLiked")
+        } catch (e: Exception) {
+            println("[FullPlayerScreen] Error checking liked status: ${e.message}")
+            isLiked = false
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -452,16 +478,11 @@ fun FullPlayerScreen(
                 IconButton(
                     onClick = {
                         coroutineScope.launch {
-                            val cached = TrackCache.loadTracks()?.toMutableList() ?: mutableListOf()
                             if (!isLiked) {
-                                if (cached.none { it.id == currentTrack.id }) {
-                                    cached.add(currentTrack)
-                                    TrackCache.saveTracks(cached)
-                                }
+                                trackRepository.likeTrack(currentTrack.id ?: "")
                                 isLiked = true
                             } else {
-                                val updated = cached.filter { it.id != currentTrack.id }
-                                TrackCache.saveTracks(updated)
+                                trackRepository.unlikeTrack(currentTrack.id ?: "")
                                 isLiked = false
                             }
                         }

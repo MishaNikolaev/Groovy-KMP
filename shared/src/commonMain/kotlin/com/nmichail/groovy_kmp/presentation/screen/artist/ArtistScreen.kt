@@ -27,7 +27,7 @@ import com.nmichail.groovy_kmp.domain.models.Album
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
-import com.nmichail.groovy_kmp.data.local.TrackCache
+import com.nmichail.groovy_kmp.domain.repository.TrackRepository
 import kotlinx.coroutines.launch
 import org.koin.mp.KoinPlatform.getKoin
 
@@ -45,6 +45,7 @@ fun ArtistScreen(
     val koin = getKoin()
     val artistViewModel = remember { koin.get<ArtistViewModel>() }
     val playerViewModel = remember { koin.get<PlayerViewModel>() }
+    val trackRepository = remember { koin.get<TrackRepository>() }
     val playerInfo by playerViewModel.playerInfo.collectAsState()
     
     val state by artistViewModel.state.collectAsState()
@@ -53,8 +54,7 @@ fun ArtistScreen(
     
     LaunchedEffect(artistName) {
         artistViewModel.loadArtistData(artistName)
-        // Загружаем лайкнутые треки
-        likedTracks = TrackCache.loadTracks() ?: emptyList()
+        likedTracks = emptyList()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -134,18 +134,12 @@ fun ArtistScreen(
                         likedTracks = likedTracks,
                         onLikeTrack = { track ->
                             coroutineScope.launch {
-                                val cached = TrackCache.loadTracks()?.toMutableList() ?: mutableListOf()
                                 if (likedTracks.none { it.id == track.id }) {
                                     // Лайкаем трек
-                                    if (track.id != null && cached.none { it.id == track.id }) {
-                                        cached.add(track)
-                                        TrackCache.saveTracks(cached)
-                                    }
+                                    trackRepository.likeTrack(track.id ?: "")
                                     likedTracks = likedTracks + track
                                 } else {
-                                    // Убираем лайк
-                                    val updated = cached.filter { it.id != track.id }
-                                    TrackCache.saveTracks(updated)
+                                    trackRepository.unlikeTrack(track.id ?: "")
                                     likedTracks = likedTracks.filter { it.id != track.id }
                                 }
                             }

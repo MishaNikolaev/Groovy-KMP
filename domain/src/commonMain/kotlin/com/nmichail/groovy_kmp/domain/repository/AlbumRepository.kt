@@ -11,4 +11,5 @@ interface AlbumRepository {
     suspend fun likeAlbum(id: String)
     suspend fun unlikeAlbum(id: String)
     suspend fun getLikedAlbums(userId: String): List<Album>
+    suspend fun isAlbumLiked(id: String): Boolean
 } 

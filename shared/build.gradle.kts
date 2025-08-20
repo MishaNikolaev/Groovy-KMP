@@ -67,9 +67,7 @@ kotlin {
                 implementation("moe.tlaster:precompose:1.5.10")
                 implementation("media.kamel:kamel-image:0.5.0")
                 
-                // Data module
-                implementation(project(":data:core"))
-                // Domain module
+                // Domain module only - remove data module dependencies
                 implementation(project(":domain"))
 
             }
