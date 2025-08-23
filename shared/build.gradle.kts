@@ -69,6 +69,10 @@ kotlin {
                 
                 // Domain module only - remove data module dependencies
                 implementation(project(":domain"))
+                
+                // Auth module - needed for navigation
+                implementation(project(":presentation:screen:auth"))
+
 
             }
         }

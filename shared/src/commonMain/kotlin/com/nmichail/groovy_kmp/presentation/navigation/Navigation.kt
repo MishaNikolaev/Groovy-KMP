@@ -1,7 +1,7 @@
 package com.nmichail.groovy_kmp.presentation.navigation
 
 import HomeScreen
-import com.nmichail.groovy_kmp.presentation.screen.login.LoginViewModel
+import com.nmichail.groovy_kmp.presentation.screen.auth.login.LoginViewModel
 import com.nmichail.groovy_kmp.presentation.navigation.Screen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,19 +10,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-// Data imports removed - these should be injected through DI
 import com.nmichail.groovy_kmp.domain.models.PlayerState
 import com.nmichail.groovy_kmp.presentation.screen.favourite.FavouriteScreen
 import com.nmichail.groovy_kmp.presentation.screen.favourite.MyLikesScreen
 import com.nmichail.groovy_kmp.presentation.screen.favourite.MyLikedAlbumsScreen
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
-import com.nmichail.groovy_kmp.presentation.screen.login.LoginScreen
+import com.nmichail.groovy_kmp.presentation.screen.auth.login.LoginScreen
 import com.nmichail.groovy_kmp.presentation.screen.player.FullPlayerScreen
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerBar
 import com.nmichail.groovy_kmp.presentation.screen.profile.ProfileScreen
-import com.nmichail.groovy_kmp.presentation.screen.register.RegisterScreen
-import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
+import com.nmichail.groovy_kmp.presentation.screen.auth.register.RegisterScreen
+import com.nmichail.groovy_kmp.presentation.screen.auth.register.RegisterViewModel
 import com.nmichail.groovy_kmp.presentation.screen.search.SearchScreen
 import com.nmichail.groovy_kmp.presentation.screen.artist.ArtistScreen
 import com.nmichail.groovy_kmp.presentation.screen.artist.AllTracksScreen

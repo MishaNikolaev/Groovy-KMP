@@ -1,4 +1,4 @@
-package com.nmichail.groovy_kmp.presentation.screen.register
+package com.nmichail.groovy_kmp.presentation.screen.auth.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,25 +27,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import groovy_kmp.shared.generated.resources.Res
-import groovy_kmp.shared.generated.resources.apple
-import groovy_kmp.shared.generated.resources.google
-import groovy_kmp.shared.generated.resources.login_image
+import groovy_kmp.presentation.screen.auth.generated.resources.Res
+import groovy_kmp.presentation.screen.auth.generated.resources.apple
+import groovy_kmp.presentation.screen.auth.generated.resources.google
+import groovy_kmp.presentation.screen.auth.generated.resources.login_image
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import org.koin.mp.KoinPlatform.getKoin
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
-fun RegisterScreen(
-    onRegister: (String, String, String) -> Unit,
-    onLogin: () -> Unit,
+fun LoginScreen(
+    onSignIn: (String, String) -> Unit,
+    onCreateAccount: () -> Unit,
     isLoading: Boolean = false,
     errorMessage: String? = null
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    var username by rememberSaveable { mutableStateOf("") }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
@@ -53,13 +51,35 @@ fun RegisterScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(Color.White)
+            .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Card(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
+                .height(220.dp)
+        ) {
+            Image(
+                painter = painterResource(Res.drawable.login_image),
+                contentDescription = "Concert background",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.White),
+                            startY = 200f
+                        )
+                    )
+            )
+        }
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(),
             shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
@@ -67,39 +87,19 @@ fun RegisterScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(32.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .padding(32.dp),
                 horizontalAlignment = Alignment.Start
             ) {
-                Spacer(modifier = Modifier.height(34.dp))
                 Text(
-                    text = "Create account",
+                    text = "Welcome back",
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
                 )
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Sign up to get started",
+                    text = "Sign In to your account",
                     style = MaterialTheme.typography.bodyLarge.copy(color = Color.DarkGray)
                 )
                 Spacer(modifier = Modifier.height(32.dp))
-
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        disabledContainerColor = Color.White,
-                        focusedIndicatorColor = Color.Black,
-                        focusedLabelColor = Color.Black,
-                        cursorColor = Color.Black,
-                    ),
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
                     value = email,
@@ -150,7 +150,7 @@ fun RegisterScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
-                    onClick = { onRegister(email, password, username) },
+                    onClick = { onSignIn(email, password) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -167,14 +167,14 @@ fun RegisterScreen(
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Sign up", color = Color.White, fontSize = 18.sp)
+                        Text("Sign in", color = Color.White, fontSize = 18.sp)
                     }
                 }
 
                 if (errorMessage != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = errorMessage,
+                        text = "Неверный логин или пароль",
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
@@ -259,10 +259,10 @@ fun RegisterScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 val annotatedText = buildAnnotatedString {
-                    append("Already have an account? ")
-                    pushStringAnnotation(tag = "SignIn", annotation = "SignIn")
+                    append("Don't have an account? ")
+                    pushStringAnnotation(tag = "SignUp", annotation = "SignUp")
                     withStyle(style = SpanStyle(color = Color.Black, fontWeight = FontWeight.Bold)) {
-                        append("Sign in")
+                        append("Sign up")
                     }
                     pop()
                 }
@@ -272,15 +272,14 @@ fun RegisterScreen(
                     modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.bodyLarge.copy(textAlign = TextAlign.Center),
                     onClick = { offset ->
-                        annotatedText.getStringAnnotations(tag = "SignIn", start = offset, end = offset)
+                        annotatedText.getStringAnnotations(tag = "SignUp", start = offset, end = offset)
                             .firstOrNull()?.let {
-                                onLogin()
+                                onCreateAccount()
                             }
                     }
                 )
+                Spacer(modifier = Modifier.height(12.dp))
             }
         }
     }
 }
-
-

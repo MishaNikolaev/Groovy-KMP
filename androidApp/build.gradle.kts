@@ -53,6 +53,10 @@ dependencies {
     implementation(projects.data.repository)
     implementation(projects.data.manager)
     
+    // Presentation modules
+    implementation(projects.presentation.core)
+    implementation(projects.presentation.screen.auth)
+    
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)

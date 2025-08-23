@@ -73,13 +73,17 @@ class TrackRepositoryImpl(private val api: TrackApi) : TrackRepository {
     
     override suspend fun addToHistory(track: Track) {
         try {
-            // Set current timestamp
-            val trackWithTimestamp = track.copy(playedAt = System.currentTimeMillis())
+            // Set current timestamp using platform-specific implementation
+            val trackWithTimestamp = track.copy(playedAt = getCurrentTimeMillis())
             TrackCache.addToHistory(trackWithTimestamp)
             println("[TrackRepositoryImpl] Added track to history: ${track.title}")
         } catch (e: Exception) {
             println("[TrackRepositoryImpl] Error adding track to history: ${e.message}")
         }
+    }
+    
+    private fun getCurrentTimeMillis(): Long {
+        return kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
     }
     
     override suspend fun isTrackLiked(id: String): Boolean {

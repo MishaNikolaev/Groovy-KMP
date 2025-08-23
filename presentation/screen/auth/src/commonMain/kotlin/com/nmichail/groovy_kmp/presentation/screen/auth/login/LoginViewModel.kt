@@ -1,4 +1,4 @@
-package com.nmichail.groovy_kmp.presentation.screen.login
+package com.nmichail.groovy_kmp.presentation.screen.auth.login
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -16,34 +16,28 @@ class LoginViewModel(
 ) {
     var isLoading by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
-    var lastAuthResponse: AuthResponse? = null
+    private var lastAuthResponse: AuthResponse? = null
 
     fun login(email: String, password: String, onResult: (Boolean) -> Unit) {
-        println("🔐 LoginViewModel: Starting login process for email: $email")
         isLoading = true
         errorMessage = null
+        
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                println("🔐 LoginViewModel: Calling loginUseCase")
                 val response = loginUseCase(email, password)
-                println("🔐 LoginViewModel: Received response: $response")
                 lastAuthResponse = response
+                
                 if (response.token != null && response.user != null) {
-                    println("🔐 LoginViewModel: Login successful, token: ${response.token}")
                     sessionViewModel.saveSession(response)
                     onResult(true)
                 } else {
-                    println("🔐 LoginViewModel: Login failed, error: ${response.error}")
                     errorMessage = response.error ?: "Unknown error"
                     onResult(false)
                 }
             } catch (e: Exception) {
-                println("❌ LoginViewModel: Login exception: ${e.message}")
-                e.printStackTrace()
                 errorMessage = e.message ?: "Network error"
                 onResult(false)
             } finally {
-                println("🔐 LoginViewModel: Login process finished")
                 isLoading = false
             }
         }
@@ -68,6 +62,5 @@ class LoginViewModel(
     fun clearSession() {
         sessionViewModel.clearSession()
         lastAuthResponse = null
-        println("🔐 LoginViewModel: Session cleared")
     }
 }

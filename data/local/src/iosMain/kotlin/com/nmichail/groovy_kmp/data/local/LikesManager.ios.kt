@@ -6,7 +6,9 @@ import platform.Foundation.NSJSONWritingPrettyPrinted
 import platform.Foundation.NSJSONReadingMutableContainers
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.cinterop.ExperimentalForeignApi
 
+@OptIn(ExperimentalForeignApi::class)
 actual object LikesManager {
     private const val LIKED_TRACKS_KEY = "liked_tracks"
     

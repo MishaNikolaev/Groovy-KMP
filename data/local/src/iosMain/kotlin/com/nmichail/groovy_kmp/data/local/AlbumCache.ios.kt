@@ -12,7 +12,9 @@ import platform.Foundation.NSString
 import platform.Foundation.stringWithContentsOfFile
 import platform.Foundation.writeToFile
 import platform.Foundation.NSURL
+import kotlinx.cinterop.ExperimentalForeignApi
 
+@OptIn(ExperimentalForeignApi::class)
 actual object AlbumCache {
     private const val CACHE_FILE = "albums_cache.json"
     private fun getCachePath(): String {
@@ -40,6 +42,7 @@ actual object AlbumCache {
     }
 }
 
+@OptIn(ExperimentalForeignApi::class)
 actual object AllAlbumsCache {
     private const val CACHE_FILE = "all_albums_cache.json"
     private fun getCachePath(): String {
@@ -67,6 +70,7 @@ actual object AllAlbumsCache {
     }
 }
 
+@OptIn(ExperimentalForeignApi::class)
 actual object TrackCache {
     private const val CACHE_FILE = "tracks_cache.json"
     private const val HISTORY_FILE = "tracks_history.json"

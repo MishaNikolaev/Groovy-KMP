@@ -9,8 +9,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-// This is a simplified session management for the shared module
-// The actual session persistence will be handled by platform-specific code
 open class SessionViewModel {
     var currentUser: User? by mutableStateOf(null)
         private set
@@ -21,7 +19,6 @@ open class SessionViewModel {
     var isSessionLoaded by mutableStateOf(false)
         private set
 
-    // Platform-specific session manager will be injected here
     var onSaveSession: ((User, String) -> Unit)? = null
     var onLoadSession: ((User?, String?) -> Unit)? = null
     var onClearSession: (() -> Unit)? = null
@@ -39,7 +36,6 @@ open class SessionViewModel {
 
     fun loadSession(callback: (Boolean) -> Unit) {
         CoroutineScope(Dispatchers.Main).launch {
-            // This will be called by platform-specific code
             onLoadSession = { user, token ->
                 currentUser = user
                 currentToken = token
@@ -49,7 +45,6 @@ open class SessionViewModel {
                 callback(hasSession)
             }
             
-            // Request session loading from platform code
             requestSessionLoad()
         }
     }
@@ -62,8 +57,6 @@ open class SessionViewModel {
     }
 
     protected open fun requestSessionLoad() {
-        // This method will be implemented differently per platform
-        // For now, just indicate no session
         onLoadSession?.invoke(null, null)
     }
 

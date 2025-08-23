@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.nmichail.groovy_kmp.Greeting
 import com.nmichail.groovy_kmp.presentation.App
-import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
 import org.koin.android.ext.android.getKoin
 import android.util.Log
 import android.widget.Toast
