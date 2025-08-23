@@ -33,15 +33,15 @@ include(":data:local")
 include(":data:repository")
 include(":data:manager")
 
-// Presentation modules
-include(":presentation:core")
-include(":presentation:screen:auth")
-include(":presentation:screen:home")
-include(":presentation:screen:player")
-include(":presentation:screen:search")
-include(":presentation:screen:profile")
-include(":presentation:screen:favourite")
-include(":presentation:navigation")
+// Feature modules
+include(":feature:core")
+include(":feature:auth")
+include(":feature:home")
+include(":feature:player")
+include(":feature:search")
+include(":feature:profile")
+include(":feature:favourite")
+include(":feature:navigation")
 
 // Feature modules
 include(":feature:auth")

@@ -71,7 +71,7 @@ kotlin {
                 implementation(project(":domain"))
                 
                 // Auth module - needed for navigation
-                implementation(project(":presentation:screen:auth"))
+                implementation(project(":feature:auth"))
 
 
             }
