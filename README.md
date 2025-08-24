@@ -1,4 +1,3 @@
-
 It will be music player application with Ktor backend. 
 Now in progress. 
 
