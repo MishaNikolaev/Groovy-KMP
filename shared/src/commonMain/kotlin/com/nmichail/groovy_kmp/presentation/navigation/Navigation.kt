@@ -19,10 +19,10 @@ import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.
 import com.nmichail.groovy_kmp.feature.auth.login.LoginScreen
 import com.nmichail.groovy_kmp.presentation.screen.player.FullPlayerScreen
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerBar
-import com.nmichail.groovy_kmp.presentation.screen.profile.ProfileScreen
+import com.nmichail.groovy_kmp.feature.profile.ProfileScreen
 import com.nmichail.groovy_kmp.feature.auth.register.RegisterScreen
 import com.nmichail.groovy_kmp.feature.auth.register.RegisterViewModel
-import com.nmichail.groovy_kmp.presentation.screen.search.SearchScreen
+import com.nmichail.groovy_kmp.feature.search.SearchScreen
 import com.nmichail.groovy_kmp.presentation.screen.artist.ArtistScreen
 import com.nmichail.groovy_kmp.presentation.screen.artist.AllTracksScreen
 import com.nmichail.groovy_kmp.presentation.screen.artists.AllArtistsScreen

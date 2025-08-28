@@ -1,4 +1,4 @@
-package com.nmichail.groovy_kmp.presentation.screen.profile
+package com.nmichail.groovy_kmp.feature.profile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,10 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.jetbrains.compose.resources.painterResource
-import groovy_kmp.shared.generated.resources.Res
-import groovy_kmp.shared.generated.resources.avatar
-import groovy_kmp.shared.generated.resources.profile_image_gray
+// Resources removed to avoid circular dependency
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.BorderStroke
@@ -106,11 +103,12 @@ fun ProfileScreen(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(Res.drawable.avatar),
-                        contentDescription = "Avatar",
-                        modifier = Modifier.size(56.dp).clip(CircleShape),
-                        contentScale = ContentScale.Crop
+                    // Avatar placeholder - removed resource dependency
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(Color.Gray)
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
