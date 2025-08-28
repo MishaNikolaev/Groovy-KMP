@@ -44,6 +44,19 @@ android {
 
 dependencies {
     implementation(projects.shared)
+    implementation(projects.domain)
+    
+    // Data modules - add directly since they were removed from shared
+    implementation(projects.data.core)
+    implementation(projects.data.remote)
+    implementation(projects.data.local)
+    implementation(projects.data.repository)
+    implementation(projects.data.manager)
+    
+    // Feature modules
+    implementation(projects.feature.core)
+    implementation(projects.feature.auth)
+    
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)

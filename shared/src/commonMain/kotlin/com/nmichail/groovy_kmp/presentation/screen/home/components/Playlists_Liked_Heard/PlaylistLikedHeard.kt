@@ -17,14 +17,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.models.Album
+import com.nmichail.groovy_kmp.domain.repository.TrackRepository
+import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
 import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
+import org.koin.mp.KoinPlatform.getKoin
 import groovy_kmp.shared.generated.resources.Res
 import groovy_kmp.shared.generated.resources.playlist_example
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
-import com.nmichail.groovy_kmp.data.local.TrackCache
-import com.nmichail.groovy_kmp.data.local.AlbumCache
+// Data imports removed - these should be injected through DI
+// Data imports removed - these should be injected through DI
 import kotlinx.coroutines.launch
 
 @Composable
@@ -36,20 +39,59 @@ fun PlaylistsLikedHeard(
     var likedTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
     var likedAlbums by remember { mutableStateOf<List<Album>>(emptyList()) }
     var lastLikedAlbum by remember { mutableStateOf<Album?>(null) }
+    var lastLikedTrack by remember { mutableStateOf<Track?>(null) }
     var lastPlayedTrackFromHistory by remember { mutableStateOf<Track?>(null) }
     
     LaunchedEffect(Unit) {
-        val cachedTracks = TrackCache.loadTracks()
-        val cachedAlbums = AlbumCache.loadAlbums()
-        val history = TrackCache.loadHistory()
-        
-        likedTracks = cachedTracks ?: emptyList()
-        likedAlbums = cachedAlbums ?: emptyList()
-        lastLikedAlbum = likedAlbums.lastOrNull()
-        lastPlayedTrackFromHistory = history?.firstOrNull()
-
-        history?.forEachIndexed { index, track ->
-            println("[PlaylistLikedHeard] Track $index: ${track.title}, coverColor: ${track.coverColor}, coverUrl: ${track.coverUrl}, playedAt: ${track.playedAt}")
+        try {
+            // Load liked tracks and albums from local storage
+            val trackRepository = getKoin().get<TrackRepository>()
+            val albumRepository = getKoin().get<AlbumRepository>()
+            
+            // Load liked tracks
+            val allTracks = trackRepository.getTracks()
+            val likedTrackIds = mutableListOf<String>()
+            for (track in allTracks) {
+                if (trackRepository.isTrackLiked(track.id ?: "")) {
+                    likedTrackIds.add(track.id ?: "")
+                }
+            }
+            likedTracks = allTracks.filter { track -> 
+                track.id != null && likedTrackIds.contains(track.id)
+            }
+            
+            // Load liked albums
+            val allAlbums = albumRepository.getAlbums()
+            val likedAlbumIds = mutableListOf<String>()
+            for (album in allAlbums) {
+                if (albumRepository.isAlbumLiked(album.id ?: "")) {
+                    likedAlbumIds.add(album.id ?: "")
+                }
+            }
+            likedAlbums = allAlbums.filter { album -> 
+                album.id != null && likedAlbumIds.contains(album.id)
+            }
+            
+            // Get last liked album
+            lastLikedAlbum = likedAlbums.firstOrNull()
+            
+            // Get last liked track (for cover display)
+            lastLikedTrack = likedTracks.firstOrNull()
+            
+            // Get last played track from history
+            val recentTracks = trackRepository.getRecentTracks()
+            lastPlayedTrackFromHistory = recentTracks.firstOrNull()
+            
+            println("[PlaylistLikedHeard] Loaded ${likedTracks.size} liked tracks, ${likedAlbums.size} liked albums")
+            println("[PlaylistLikedHeard] Last liked album: ${lastLikedAlbum?.title}, coverUrl: ${lastLikedAlbum?.coverUrl}")
+            println("[PlaylistLikedHeard] Last liked track: ${lastLikedTrack?.title}, coverUrl: ${lastLikedTrack?.coverUrl}")
+        } catch (e: Exception) {
+            println("[PlaylistLikedHeard] Error loading data: ${e.message}")
+            likedTracks = emptyList()
+            likedAlbums = emptyList()
+            lastLikedAlbum = null
+            lastLikedTrack = null
+            lastPlayedTrackFromHistory = null
         }
     }
 
@@ -59,13 +101,20 @@ fun PlaylistsLikedHeard(
             .padding(vertical = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        var myLikesCoverColor by remember(lastLikedAlbum?.id, lastLikedTrack?.id) { 
+            mutableStateOf<Long?>(lastLikedAlbum?.coverColor ?: lastLikedTrack?.coverColor) 
+        }
         PlaylistPreview(
             title = "My likes",
             subtitle = "${likedTracks.size} tracks, ${likedAlbums.size} albums",
-            coverUrl = lastLikedAlbum?.coverUrl,
-            coverColor = lastLikedAlbum?.coverColor,
+            coverUrl = lastLikedAlbum?.coverUrl ?: lastLikedTrack?.coverUrl,
+            coverColor = myLikesCoverColor,
             modifier = Modifier.weight(1f),
-            onClick = onMyLikesClick
+            onClick = onMyLikesClick,
+            onColorExtracted = { color ->
+                myLikesCoverColor = color.value.toLong()
+                println("[PlaylistLikedHeard] Extracted color for My likes: ${color.value}")
+            }
         )
         var localCoverColor by remember(lastPlayedTrackFromHistory?.id) { mutableStateOf<Long?>(lastPlayedTrackFromHistory?.coverColor) }
         PlaylistPreview(
@@ -105,7 +154,7 @@ fun PlaylistPreview(
                 modifier = Modifier
                     .size(68.dp)
                     .clip(MaterialTheme.shapes.medium)
-                    .background(coverColor?.let { Color(it) } ?: Color(0xFFE5BDBD))
+                    .background(if (coverColor != null) Color(coverColor) else Color(0xFFE5BDBD))
                     .align(Alignment.BottomEnd)
             ) {
                 if (coverColor != null) {

@@ -66,6 +66,13 @@ kotlin {
                 implementation(compose.components.resources)
                 implementation("moe.tlaster:precompose:1.5.10")
                 implementation("media.kamel:kamel-image:0.5.0")
+                
+                // Domain module only - remove data module dependencies
+                implementation(project(":domain"))
+                
+                // Auth module - needed for navigation
+                implementation(project(":feature:auth"))
+
 
             }
         }

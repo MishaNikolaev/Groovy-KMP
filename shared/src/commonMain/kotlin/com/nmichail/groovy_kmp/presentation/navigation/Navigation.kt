@@ -1,7 +1,8 @@
 package com.nmichail.groovy_kmp.presentation.navigation
 
 import HomeScreen
-import LoginViewModel
+import com.nmichail.groovy_kmp.feature.auth.login.LoginViewModel
+import com.nmichail.groovy_kmp.presentation.navigation.Screen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -9,20 +10,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import com.nmichail.groovy_kmp.data.local.model.UserSession
-import com.nmichail.groovy_kmp.data.manager.SessionManager
 import com.nmichail.groovy_kmp.domain.models.PlayerState
 import com.nmichail.groovy_kmp.presentation.screen.favourite.FavouriteScreen
 import com.nmichail.groovy_kmp.presentation.screen.favourite.MyLikesScreen
 import com.nmichail.groovy_kmp.presentation.screen.favourite.MyLikedAlbumsScreen
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumScreen
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.album.AlbumViewModel
-import com.nmichail.groovy_kmp.presentation.screen.login.LoginScreen
+import com.nmichail.groovy_kmp.feature.auth.login.LoginScreen
 import com.nmichail.groovy_kmp.presentation.screen.player.FullPlayerScreen
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerBar
 import com.nmichail.groovy_kmp.presentation.screen.profile.ProfileScreen
-import com.nmichail.groovy_kmp.presentation.screen.register.RegisterScreen
-import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
+import com.nmichail.groovy_kmp.feature.auth.register.RegisterScreen
+import com.nmichail.groovy_kmp.feature.auth.register.RegisterViewModel
 import com.nmichail.groovy_kmp.presentation.screen.search.SearchScreen
 import com.nmichail.groovy_kmp.presentation.screen.artist.ArtistScreen
 import com.nmichail.groovy_kmp.presentation.screen.artist.AllTracksScreen
@@ -40,14 +39,22 @@ fun Navigation() {
     val koin = getKoin()
     val loginViewModel = remember { koin.get<LoginViewModel>() }
     val registerViewModel = remember { koin.get<RegisterViewModel>() }
-    val sessionManager = remember { koin.get<SessionManager>() }
+    val playerViewModel = remember { koin.get<com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel>() }
+    val albumViewModel = remember { koin.get<AlbumViewModel>() }
     var selectedTab by remember { mutableStateOf<Screen.MainSection>(Screen.MainSection.Home) }
-    var userSession by remember { mutableStateOf<UserSession?>(null) }
     var initialRoute by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        userSession = sessionManager.getSession()
-        initialRoute = if (userSession != null) "main" else Screen.Login.route
+        println("🔐 Navigation: Checking for saved session...")
+        loginViewModel.checkSavedSession { hasSession ->
+            if (hasSession) {
+                println("🔐 Navigation: Found saved session, navigating to main")
+                initialRoute = "main"
+            } else {
+                println("🔐 Navigation: No saved session found, navigating to login")
+                initialRoute = Screen.Login.route
+            }
+        }
     }
     if (initialRoute == null) return
 
@@ -63,10 +70,7 @@ fun Navigation() {
                             CoroutineScope(Dispatchers.Main).launch {
                                 val user = loginViewModel.getUser()
                                 val token = loginViewModel.getToken()
-                                if (user != null && token != null) {
-                                    sessionManager.saveSession(UserSession(user.email, user.username, token))
-                                    userSession = UserSession(user.email, user.username, token)
-                                }
+                                println("🔐 Navigation: Login successful, navigating to main")
                                 navigator.navigate("main")
                                 selectedTab = Screen.MainSection.Home
                             }
@@ -92,20 +96,30 @@ fun Navigation() {
             )
         }
 
-
-
-
-
         scene(route = "main") {
+            println("🔐 Navigation: Entering main scene")
+            val user = loginViewModel.getUser()
+            println("🔐 Navigation: User data: $user")
             MainSection(
                 selectedTab = selectedTab,
                 onTabSelected = { tab -> selectedTab = tab },
-                userSession = userSession,
+                userSession = user, // Pass the user from LoginViewModel
+                userEmail = user?.email,
+                userUsername = user?.username,
+                playerViewModel = playerViewModel,
+                albumViewModel = albumViewModel,
                 onLogout = {
+                    println("🔐 Navigation: Logout initiated")
                     CoroutineScope(Dispatchers.Main).launch {
-                        sessionManager.clearSession()
-                        userSession = null
-                        navigator.navigate(Screen.Login.route)
+                        try {
+                            loginViewModel.clearSession()
+                            println("🔐 Navigation: Session cleared, navigating to login screen")
+                            navigator.navigate(Screen.Login.route)
+                            println("🔐 Navigation: Successfully navigated to login")
+                        } catch (e: Exception) {
+                            println("❌ Navigation: Error during logout: ${e.message}")
+                            e.printStackTrace()
+                        }
                     }
                 }
             )
@@ -117,10 +131,14 @@ fun Navigation() {
 private fun MainSection(
     selectedTab: Screen.MainSection,
     onTabSelected: (Screen.MainSection) -> Unit,
-    userSession: UserSession?,
-    onLogout: () -> Unit
+    userSession: Any?,
+    onLogout: () -> Unit,
+    userEmail: String? = null,
+    userUsername: String? = null,
+    playerViewModel: com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel,
+    albumViewModel: AlbumViewModel
 ) {
-    val playerViewModel = remember { getKoin().get<com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel>() }
+    // PlayerViewModel is now passed as parameter
     val playerInfo by playerViewModel.playerInfo.collectAsState()
     val currentTrack = playerInfo.track
     val playerState = playerInfo.state
@@ -133,7 +151,6 @@ private fun MainSection(
     var showMyLikedAlbums by rememberSaveable { mutableStateOf(false) }
     var showFavouriteFromHome by rememberSaveable { mutableStateOf(false) }
     var previousScreen by rememberSaveable { mutableStateOf<String?>(null) }
-    val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
     val backgroundColor = albumViewModel.getBackgroundColor()
     var albumIdFromLikes by rememberSaveable { mutableStateOf<String?>(null) }
     var showArtistScreen by rememberSaveable { mutableStateOf<String?>(null) }
@@ -154,7 +171,6 @@ private fun MainSection(
             progress = progress,
             onBackClick = { 
                 showFullPlayer = false
-                // Возвращаемся на предыдущий экран
                 previousScreen?.let { screen ->
                     when (screen) {
                         "home" -> {
@@ -266,7 +282,7 @@ private fun MainSection(
             }
         }
     } else if (albumIdForReturn != null) {
-        val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
+        // Use the passed albumViewModel parameter
         val albumState by albumViewModel.state.collectAsState()
         LaunchedEffect(albumIdForReturn) {
             albumIdForReturn?.let { albumViewModel.load(it) }
@@ -477,7 +493,7 @@ private fun MainSection(
             }
         }
     } else if (albumIdFromArtist != null) {
-        val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
+        // Use the passed albumViewModel parameter
         val albumState by albumViewModel.state.collectAsState()
         LaunchedEffect(albumIdFromArtist) {
             albumIdFromArtist?.let { albumViewModel.load(it) }
@@ -538,7 +554,7 @@ private fun MainSection(
             }
         }
     } else if (albumIdFromLikes != null) {
-        val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
+        // Use the passed albumViewModel parameter
         val albumState by albumViewModel.state.collectAsState()
         LaunchedEffect(albumIdFromLikes) {
             albumIdFromLikes?.let { albumViewModel.load(it) }
@@ -712,8 +728,8 @@ private fun MainSection(
                         }
                     }
                     Screen.MainSection.Profile -> ProfileScreen(
-                        email = userSession?.email,
-                        username = userSession?.username,
+                        email = userEmail,
+                        username = userUsername,
                         onLogout = onLogout
                     )
                 }

@@ -1,6 +1,6 @@
 package com.nmichail.groovy_kmp.presentation.screen.home
 
-import com.nmichail.groovy_kmp.data.local.AllAlbumsCache
+// Data imports removed - these should be injected through DI
 import com.nmichail.groovy_kmp.domain.models.Album
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
@@ -27,17 +27,8 @@ class HomeViewModel(
         viewModelScope.launch {
             // Загружаем альбомы
             try {
-                val cachedAlbums = withContext(Dispatchers.Default) {
-                    AllAlbumsCache.loadAllAlbums()
-                }
-                if (cachedAlbums != null && cachedAlbums.isNotEmpty()) {
-                    _albums.value = cachedAlbums
-                }
                 val loadedAlbums = albumRepository.getAlbums()
                 _albums.value = loadedAlbums
-                withContext(Dispatchers.Default) {
-                    AllAlbumsCache.saveAllAlbums(loadedAlbums)
-                }
             } catch (e: Exception) {
                 println("Error loading albums: ${e.message}")
             }

@@ -27,8 +27,8 @@ import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.Artis
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.models.Album
-import com.nmichail.groovy_kmp.data.local.TrackCache
-import com.nmichail.groovy_kmp.data.local.AlbumCache
+// Data imports removed - these should be injected through DI
+// Data imports removed - these should be injected through DI
 import com.nmichail.groovy_kmp.domain.repository.TrackRepository
 import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
 import org.koin.mp.KoinPlatform.getKoin
@@ -45,8 +45,9 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.zIndex
-import com.nmichail.groovy_kmp.data.manager.SessionManager
+// Data imports removed - these should be injected through DI
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Artists.ArtistsSectionWithPhotosNoViewAll
+import com.nmichail.groovy_kmp.presentation.screen.artists.ArtistInfo
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalResourceApi::class)
 @Composable
@@ -67,16 +68,37 @@ fun FavouriteScreen(
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             try {
-                val cachedTracks = TrackCache.loadTracks()
-                val cachedAlbums = AlbumCache.loadAlbums()
+                // Load liked tracks and albums from local storage
+                val albumRepository = getKoin().get<AlbumRepository>()
                 
-                likedTracks = cachedTracks ?: emptyList()
-                likedAlbums = cachedAlbums ?: emptyList()
+                // Load liked tracks
+                val allTracks = trackRepository.getTracks()
+                val likedTrackIds = mutableListOf<String>()
+                for (track in allTracks) {
+                    if (trackRepository.isTrackLiked(track.id ?: "")) {
+                        likedTrackIds.add(track.id ?: "")
+                    }
+                }
+                likedTracks = allTracks.filter { track -> 
+                    track.id != null && likedTrackIds.contains(track.id)
+                }
                 
-                println("[FavouriteScreen] Loaded ${likedTracks.size} liked tracks and ${likedAlbums.size} liked albums from cache")
+                // Load liked albums
+                val allAlbums = albumRepository.getAlbums()
+                val likedAlbumIds = mutableListOf<String>()
+                for (album in allAlbums) {
+                    if (albumRepository.isAlbumLiked(album.id ?: "")) {
+                        likedAlbumIds.add(album.id ?: "")
+                    }
+                }
+                likedAlbums = allAlbums.filter { album -> 
+                    album.id != null && likedAlbumIds.contains(album.id)
+                }
+                
+                println("[FavouriteScreen] Loaded ${likedTracks.size} liked tracks, ${likedAlbums.size} liked albums")
                 
             } catch (e: Exception) {
-                println("Error loading liked content from cache: ${e.message}")
+                println("Error loading liked content: ${e.message}")
                 likedTracks = emptyList()
                 likedAlbums = emptyList()
             } finally {
@@ -234,7 +256,7 @@ fun FavouriteScreen(
                                             coroutineScope.launch {
                                                 trackRepository.unlikeTrack(track.id!!)
                                                 likedTracks = likedTracks.filter { it.id != track.id }
-                                                TrackCache.saveTracks(likedTracks)
+                                                // TrackCache.saveTracks(likedTracks)
                                             }
                                         },
                                         modifier = Modifier.size(28.dp)
@@ -319,7 +341,7 @@ fun FavouriteScreen(
                     modifier = Modifier.size(width = 80.dp, height = 76.dp)
                 ) {
                     val lastLikedAlbum = likedAlbums.lastOrNull()
-                    val backgroundColor = lastLikedAlbum?.coverColor?.let { Color(it) } ?: Color(0xFFD3D3D3)
+                    val backgroundColor = Color(0xFFD3D3D3)
                     
                     Box(
                         modifier = Modifier
@@ -385,10 +407,11 @@ fun FavouriteScreen(
                 style = MaterialTheme.typography.bodyMedium
             )
         } else if (mostListenedArtistsState.artists.isNotEmpty()) {
+            val artistClickHandler: (String) -> Unit = onArtistClick
             ArtistsSectionWithPhotosNoViewAll(
                 title = "Most listened to artists",
-                artists = mostListenedArtistsState.artists.take(3),
-                onArtistClick = onArtistClick
+                artists = (mostListenedArtistsState.artists as List<ArtistInfo>).take(3),
+                onArtistClick = artistClickHandler
             )
         }
         Spacer(modifier = Modifier.height(18.dp))

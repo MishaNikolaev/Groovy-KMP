@@ -22,9 +22,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.layout.ContentScale
 import com.nmichail.groovy_kmp.domain.models.Track
+import com.nmichail.groovy_kmp.domain.repository.TrackRepository
 import com.nmichail.groovy_kmp.presentation.screen.home.components.Albums.PlatformImage
 import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
-import com.nmichail.groovy_kmp.data.local.TrackCache
+// Data imports removed - these should be injected through DI
 import com.nmichail.groovy_kmp.presentation.screen.artist.AllTracksViewModel
 import kotlinx.coroutines.launch
 import org.koin.mp.KoinPlatform.getKoin
@@ -40,6 +41,7 @@ fun AllTracksScreen(
 ) {
     val koin = getKoin()
     val allTracksViewModel = remember { koin.get<AllTracksViewModel>() }
+    val trackRepository = remember { koin.get<TrackRepository>() }
     val coroutineScope = rememberCoroutineScope()
     var likedTracks by remember { mutableStateOf<List<Track>>(emptyList()) }
     
@@ -54,8 +56,23 @@ fun AllTracksScreen(
                 e.printStackTrace()
             }
         }
-        // Загружаем лайкнутые треки
-        likedTracks = TrackCache.loadTracks() ?: emptyList()
+        // Загружаем лайкнутые треки из локального хранилища
+        try {
+            val allTracks = trackRepository.getTracks()
+            val likedTrackIds = mutableListOf<String>()
+            for (track in allTracks) {
+                if (trackRepository.isTrackLiked(track.id ?: "")) {
+                    likedTrackIds.add(track.id ?: "")
+                }
+            }
+            likedTracks = allTracks.filter { track -> 
+                track.id != null && likedTrackIds.contains(track.id)
+            }
+            println("[AllTracksScreen] Loaded ${likedTracks.size} liked tracks")
+        } catch (e: Exception) {
+            println("[AllTracksScreen] Error loading liked tracks: ${e.message}")
+            likedTracks = emptyList()
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -138,17 +155,18 @@ fun AllTracksScreen(
                         isLiked = likedTracks.any { it.id == track.id },
                         onLikeClick = {
                             coroutineScope.launch {
-                                val cached = TrackCache.loadTracks()?.toMutableList() ?: mutableListOf()
-                                if (likedTracks.none { it.id == track.id }) {
-                                    if (track.id != null && cached.none { it.id == track.id }) {
-                                        cached.add(track)
-                                        TrackCache.saveTracks(cached)
+                                try {
+                                    if (likedTracks.none { it.id == track.id }) {
+                                        // Лайкаем трек
+                                        trackRepository.likeTrack(track.id ?: "")
+                                        likedTracks = likedTracks + track
+                                    } else {
+                                        // Убираем лайк
+                                        trackRepository.unlikeTrack(track.id ?: "")
+                                        likedTracks = likedTracks.filter { it.id != track.id }
                                     }
-                                    likedTracks = likedTracks + track
-                                } else {
-                                    val updated = cached.filter { it.id != track.id }
-                                    TrackCache.saveTracks(updated)
-                                    likedTracks = likedTracks.filter { it.id != track.id }
+                                } catch (e: Exception) {
+                                    println("[AllTracksScreen] Error toggling track like: ${e.message}")
                                 }
                             }
                         }
@@ -172,7 +190,6 @@ private fun ArtistHeaderSection(
             .fillMaxWidth()
             .height(300.dp)
     ) {
-        // Artist Photo Background
         artistPhotoUrl?.let { url ->
             PlatformImage(
                 url = url,
@@ -188,14 +205,12 @@ private fun ArtistHeaderSection(
             )
         }
         
-        // Gradient overlay
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.3f))
         )
         
-        // Artist Info
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -209,14 +224,12 @@ private fun ArtistHeaderSection(
             )
         }
         
-        // Action Buttons
         Row(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(bottom = 16.dp, end = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Listen Button
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -262,7 +275,6 @@ private fun TrackRow(
             .padding(vertical = 8.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Album Cover
         track.coverUrl?.let { url ->
             PlatformImage(
                 url = url,
@@ -280,7 +292,6 @@ private fun TrackRow(
             )
         }
         
-        // Track Info
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -300,7 +311,6 @@ private fun TrackRow(
             )
         }
         
-        // Like Button
         IconButton(
             onClick = onLikeClick,
             modifier = Modifier.size(32.dp)

@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -44,9 +45,56 @@ fun PlayerBar(
     if (currentTrack == null) return
 
     val albumViewModel = remember { getKoin().get<AlbumViewModel>() }
-    val albumColor = remember(currentTrack?.coverColor, currentTrack?.albumId) {
-        currentTrack?.coverColor?.let { Color(it) }
-            ?: albumViewModel.getAlbumCoverColor(currentTrack?.albumId)
+    
+    key(currentTrack?.id) {
+        // Always extract color from cover image
+        PlatformImage(
+            url = currentTrack?.coverUrl,
+            contentDescription = null,
+            modifier = Modifier.size(1.dp).alpha(0f),
+            onColorExtracted = { color ->
+                currentTrack?.albumId?.let {
+                    albumViewModel.setAlbumColor(it, color)
+                    println("[PlayerBar] Color extracted from invisible cover: $color for album $it")
+                }
+            }
+        )
+    }
+    val albumState by albumViewModel.state.collectAsState()
+    
+    // Get the current album from state if it matches the track's album
+    val currentAlbum = if (albumState?.album?.id == currentTrack?.albumId) albumState?.album else null
+    
+    var albumColor by remember(currentTrack?.coverColor, currentTrack?.albumId, currentAlbum?.coverColor) {
+        val initialColor = currentTrack?.coverColor?.let { Color(it) } 
+            ?: currentAlbum?.coverColor?.let { Color(it) }
+            ?: albumViewModel.getAlbumCoverColor(currentTrack?.albumId) 
+            ?: Color(0xFFAAA287)
+        println("[PlayerBar] Initial albumColor: $initialColor for track: ${currentTrack?.title}, albumId: ${currentTrack?.albumId}")
+        mutableStateOf(initialColor)
+    }
+    
+    // Update color when it changes in AlbumViewModel
+    LaunchedEffect(currentTrack?.albumId) {
+        currentTrack?.albumId?.let { albumId ->
+            val storedColor = albumViewModel.getAlbumCoverColor(albumId)
+            if (storedColor != Color(0xFFAAA287)) {
+                albumColor = storedColor
+                println("[PlayerBar] Updated albumColor from stored: $storedColor for album $albumId")
+            }
+        }
+    }
+    
+    // Update color when track changes
+    LaunchedEffect(currentTrack?.id) {
+        currentTrack?.let { track ->
+            val newColor = track.coverColor?.let { Color(it) } 
+                ?: currentAlbum?.coverColor?.let { Color(it) }
+                ?: albumViewModel.getAlbumCoverColor(track.albumId) 
+                ?: Color(0xFFAAA287)
+            albumColor = newColor
+            println("[PlayerBar] Updated albumColor for new track: $newColor for track: ${track.title}")
+        }
     }
 
     var isDragging by remember { mutableStateOf(false) }
@@ -101,6 +149,8 @@ fun PlayerBar(
                         onColorExtracted = { color ->
                             currentTrack.albumId?.let {
                                 albumViewModel.setAlbumColor(it, color)
+                                albumColor = color
+                                println("[PlayerBar] Color extracted from cover: $color for album $it")
                             }
                         }
                     )

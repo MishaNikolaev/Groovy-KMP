@@ -1,13 +1,15 @@
 package com.nmichail.groovy_kmp.presentation.screen.home.components.recent
 
-import com.nmichail.groovy_kmp.data.local.TrackCache
+// Data imports removed - these should be injected through DI
 import com.nmichail.groovy_kmp.domain.models.Track
+import com.nmichail.groovy_kmp.domain.repository.TrackRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.koin.mp.KoinPlatform.getKoin
 
 
 data class TrackGroup(
@@ -26,25 +28,15 @@ class RecentTracksViewModel() {
     fun load() {
         viewModelScope.launch {
             try {
-                val history = TrackCache.loadHistory()
-                println("[RecentTracksViewModel] Raw history loaded: ${history?.size ?: 0} tracks")
-                history?.forEach { track ->
-                    println("[RecentTracksViewModel] Track: ${track.title}, playedAt: ${track.playedAt}")
-                }
+                // Load recent tracks from local storage
+                val trackRepository = getKoin().get<TrackRepository>()
+                val recentTracks = trackRepository.getRecentTracks()
+                println("[RecentTracksViewModel] Loaded ${recentTracks.size} recent tracks from local storage")
                 
-                _tracks.value = history ?: emptyList()
-                
-                val groups = groupTracksByDate(history ?: emptyList())
-                println("[RecentTracksViewModel] Created ${groups.size} groups")
-                groups.forEach { group ->
-                    println("[RecentTracksViewModel] Group: ${group.date}, tracks: ${group.tracks.size}")
-                }
-                _trackGroups.value = groups
-                
-                println("[RecentTracksViewModel] Loaded ${history?.size ?: 0} tracks from history, grouped into ${groups.size} days")
+                _tracks.value = recentTracks
+                _trackGroups.value = groupTracksByDate(recentTracks)
             } catch (e: Exception) {
-                println("[RecentTracksViewModel] Error loading history: ${e.message}")
-                e.printStackTrace()
+                println("[RecentTracksViewModel] Error loading recent tracks: ${e.message}")
                 _tracks.value = emptyList()
                 _trackGroups.value = emptyList()
             }

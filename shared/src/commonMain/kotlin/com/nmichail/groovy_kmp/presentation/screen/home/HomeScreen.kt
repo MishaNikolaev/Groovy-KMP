@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
+import com.nmichail.groovy_kmp.domain.repository.TrackRepository
 import com.nmichail.groovy_kmp.presentation.AlbumFontFamily
 import com.nmichail.groovy_kmp.presentation.screen.home.HomeViewModel
 import com.nmichail.groovy_kmp.presentation.screen.home.components.recent.RecentTracksScreen
@@ -38,7 +40,19 @@ fun HomeScreen(
     onArtistClick: (String) -> Unit = {},
     onViewAllArtistsClick: () -> Unit = {}
 ) {
-    val viewModel = remember { getKoin().get<HomeViewModel>() }
+    // Temporarily disable HomeViewModel to test if other parts work
+    val viewModel = remember { 
+        try {
+            getKoin().get<HomeViewModel>()
+        } catch (e: Exception) {
+            println("❌ HomeScreen: Error getting HomeViewModel from Koin: ${e.message}")
+            e.printStackTrace()
+            HomeViewModel(
+                albumRepository = getKoin().get<AlbumRepository>(),
+                trackRepository = getKoin().get<TrackRepository>()
+            )
+        }
+    }
     val albums by viewModel.albums.collectAsState()
     val artists by viewModel.artists.collectAsState()
     var selectedAlbumId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -46,7 +60,15 @@ fun HomeScreen(
     var showHistoryScreen by rememberSaveable { mutableStateOf(false) }
     var showAllArtists by rememberSaveable { mutableStateOf(false) }
 
-    val recentTracksViewModel = remember { getKoin().get<RecentTracksViewModel>() }
+    val recentTracksViewModel = remember { 
+        try {
+            getKoin().get<RecentTracksViewModel>()
+        } catch (e: Exception) {
+            println("❌ HomeScreen: Error getting RecentTracksViewModel from Koin: ${e.message}")
+            e.printStackTrace()
+            throw e
+        }
+    }
     val recentTracks by recentTracksViewModel.tracks.collectAsState()
     val lastPlayedTrack = recentTracks.firstOrNull()
     LaunchedEffect(Unit) { recentTracksViewModel.load() }

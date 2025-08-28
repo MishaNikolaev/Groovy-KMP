@@ -36,8 +36,6 @@ import com.nmichail.groovy_kmp.presentation.screen.player.PlayerViewModel
 import kotlinx.coroutines.launch
 import org.koin.mp.KoinPlatform.getKoin
 import com.nmichail.groovy_kmp.domain.repository.AlbumRepository
-import com.nmichail.groovy_kmp.data.local.AlbumCache
-import com.nmichail.groovy_kmp.data.manager.SessionManager
 
 @Composable
 fun AlbumScreen(
@@ -51,48 +49,22 @@ fun AlbumScreen(
 ) {
     val playerViewModel = remember { getKoin().get<PlayerViewModel>() }
     val playerInfo by playerViewModel.playerInfo.collectAsState()
-    val isPlaying = playerInfo.state is PlayerState.Playing
+                    val isPlaying = playerInfo.state is PlayerState.Playing
     val currentTrack = playerInfo.track
     val albumRepository = remember { getKoin().get<AlbumRepository>() }
     var isAlbumLiked by remember(albumWithTracks.album.id) { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    val sessionManager = remember { getKoin().get<SessionManager>() }
     var currentUserId by remember { mutableStateOf<String?>(userId) }
 
     LaunchedEffect(Unit) {
+        currentUserId = userId
+        // Check if album is liked from local storage
         try {
-            if (userId == null) {
-                val session = sessionManager.getSession()
-                currentUserId = session?.email
-            } else {
-                currentUserId = userId
-            }
-            
-            val userId = currentUserId
-            if (userId != null && albumWithTracks.album.id != null) {
-                try {
-                    val cachedAlbums = AlbumCache.loadAlbums()
-                    val isLiked = cachedAlbums?.any { it.id == albumWithTracks.album.id } ?: false
-                    isAlbumLiked = isLiked
-                } catch (e: Exception) {
-                    isAlbumLiked = false
-                }
-            } else {
-                isAlbumLiked = false
-            }
+            isAlbumLiked = albumRepository.isAlbumLiked(albumWithTracks.album.id ?: "")
+            println("[AlbumScreen] Album ${albumWithTracks.album.title} liked status: $isAlbumLiked")
         } catch (e: Exception) {
+            println("[AlbumScreen] Error checking album liked status: ${e.message}")
             isAlbumLiked = false
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        try {
-            val cachedAlbums = AlbumCache.loadAlbums()
-            if (cachedAlbums != null && cachedAlbums.size > 10) {
-                AlbumCache.saveAlbums(emptyList())
-            }
-        } catch (e: Exception) {
-            println("[AlbumScreen] Error checking cache size: ${e.message}")
         }
     }
 
@@ -104,18 +76,17 @@ fun AlbumScreen(
     }
 
     key(albumWithTracks.album.id) {
-        if (albumColor == Color(0xFFAAA287)) {
-            PlatformImage(
-                url = albumWithTracks.album.coverUrl,
-                contentDescription = null,
-                modifier = Modifier.size(1.dp).alpha(0f),
-                onColorExtracted = { color ->
-                    albumWithTracks.album.id?.let {
-                        albumViewModel.setAlbumColor(it, color)
-                    }
+        // Always extract color from cover image
+        PlatformImage(
+            url = albumWithTracks.album.coverUrl,
+            contentDescription = null,
+            modifier = Modifier.size(1.dp).alpha(0f),
+            onColorExtracted = { color ->
+                albumWithTracks.album.id?.let {
+                    albumViewModel.setAlbumColor(it, color)
                 }
-            )
-        }
+            }
+        )
     }
 
     LazyColumn(
@@ -180,7 +151,7 @@ fun AlbumScreen(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         val author = albumWithTracks.album.artist ?: ""
-                        val year = albumWithTracks.album.createdAt ?: ""
+                        val year = albumWithTracks.album.createdAt?.toString() ?: ""
                         val authorYear = if (author.isNotBlank() && year.isNotBlank()) "$author · $year" else author + year
                         Row(
                             modifier = Modifier.clickable(enabled = author.isNotBlank()) { albumWithTracks.album.artist?.let { onArtistClick(it) } },
@@ -220,32 +191,15 @@ fun AlbumScreen(
                                 coroutineScope.launch {
                                     try {
                                         val userId = currentUserId
-                                        if (!isAlbumLiked && albumWithTracks.album.id != null) {
-                                            albumRepository.likeAlbum(albumWithTracks.album.id)
-                                            
-                                            try {
-                                                val currentCached = AlbumCache.loadAlbums() ?: emptyList()
-                                                val updatedCached = currentCached + albumWithTracks.album
-                                                AlbumCache.saveAlbums(updatedCached)
-                                            } catch (e: Exception) {
-                                                println("[AlbumScreen] Error updating cache: ${e.message}")
-                                            }
-                                            
+                                        val albumId = albumWithTracks.album.id
+                                        if (!isAlbumLiked && albumId != null) {
+                                            albumRepository.likeAlbum(albumId)
                                             isAlbumLiked = true
-                                        } else if (isAlbumLiked && albumWithTracks.album.id != null) {
-                                            albumRepository.unlikeAlbum(albumWithTracks.album.id)
-                                            
-                                            try {
-                                                val currentCached = AlbumCache.loadAlbums() ?: emptyList()
-                                                val updatedCached = currentCached.filter { it.id != albumWithTracks.album.id }
-                                                AlbumCache.saveAlbums(updatedCached)
-                                            } catch (e: Exception) {
-                                                println("[AlbumScreen] Error updating cache: ${e.message}")
-                                            }
-                                            
+                                        } else if (isAlbumLiked && albumId != null) {
+                                            albumRepository.unlikeAlbum(albumId)
                                             isAlbumLiked = false
                                         } else {
-                                            println("[AlbumScreen] Cannot like/unlike - userId: $userId, albumId: ${albumWithTracks.album.id}")
+                                            println("[AlbumScreen] Cannot like/unlike - userId: $userId, albumId: $albumId")
                                         }
                                     } catch (e: Exception) {
                                         println("Error toggling album like: ${e.message}")

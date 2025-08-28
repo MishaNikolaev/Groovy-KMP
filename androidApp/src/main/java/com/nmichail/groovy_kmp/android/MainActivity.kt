@@ -1,6 +1,5 @@
 package com.nmichail.groovy_kmp.android
 
-import LoginViewModel
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.nmichail.groovy_kmp.Greeting
 import com.nmichail.groovy_kmp.presentation.App
-import com.nmichail.groovy_kmp.presentation.screen.register.RegisterViewModel
 import org.koin.android.ext.android.getKoin
 import android.util.Log
 import android.widget.Toast

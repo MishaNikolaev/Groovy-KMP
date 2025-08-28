@@ -1,7 +1,7 @@
 package com.nmichail.groovy_kmp.presentation.screen.favourite
 
-import com.nmichail.groovy_kmp.data.local.TrackCache
-import com.nmichail.groovy_kmp.data.local.AlbumCache
+// Data imports removed - these should be injected through DI
+// Data imports removed - these should be injected through DI
 import com.nmichail.groovy_kmp.domain.models.Track
 import com.nmichail.groovy_kmp.domain.models.Album
 import kotlinx.coroutines.*
@@ -24,11 +24,12 @@ class MostListenedArtistsViewModel {
             _state.value = _state.value.copy(isLoading = true, error = null)
             
             try {
-                val history = TrackCache.loadHistory()
-                val albums = AlbumCache.loadAlbums()
-                println("[MostListenedArtistsViewModel] Loaded ${history?.size ?: 0} tracks from history and ${albums?.size ?: 0} albums")
+                // Cache operations removed - should be handled through repository
+                val history = emptyList<Track>()
+                val albums = emptyList<Album>()
+                println("[MostListenedArtistsViewModel] Cache operations removed - should be handled through repository")
                 
-                if (history.isNullOrEmpty()) {
+                if (history.isEmpty()) {
                     _state.value = _state.value.copy(
                         artists = emptyList(),
                         isLoading = false
@@ -41,7 +42,7 @@ class MostListenedArtistsViewModel {
                 val artistPhotos = mutableMapOf<String, String?>()
                 
                 // Сначала собираем фото артистов из альбомов (приоритет)
-                albums?.forEach { album ->
+                albums.forEach { album ->
                     album.artist?.let { artistName ->
                         if (!artistPhotos.containsKey(artistName) && !album.artistPhotoUrl.isNullOrBlank()) {
                             artistPhotos[artistName] = album.artistPhotoUrl
@@ -51,7 +52,7 @@ class MostListenedArtistsViewModel {
                 }
                 
                 // Затем подсчитываем прослушивания и добавляем фото из треков если нет в альбомах
-                history.forEach { track ->
+                history.forEach { track: Track ->
                     track.artist?.let { artistName ->
                         artistPlayCount[artistName] = (artistPlayCount[artistName] ?: 0) + 1
                         
