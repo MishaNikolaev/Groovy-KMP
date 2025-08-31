@@ -8,7 +8,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.nmichail.groovy_kmp.Greeting
 import com.nmichail.groovy_kmp.presentation.App
 import org.koin.android.ext.android.getKoin
 import android.util.Log
