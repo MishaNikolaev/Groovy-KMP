@@ -71,6 +71,7 @@ kotlin {
                 implementation(project(":domain"))
                 
                 // Feature modules - needed for navigation
+                implementation(project(":feature:core"))
                 implementation(project(":feature:auth"))
                 implementation(project(":feature:search"))
                 implementation(project(":feature:profile"))

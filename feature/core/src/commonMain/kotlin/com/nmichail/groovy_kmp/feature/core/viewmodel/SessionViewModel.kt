@@ -1,23 +1,18 @@
-package com.nmichail.groovy_kmp.presentation.session
+package com.nmichail.groovy_kmp.feature.core.viewmodel
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.nmichail.groovy_kmp.domain.models.AuthResponse
 import com.nmichail.groovy_kmp.domain.models.User
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-open class SessionViewModel {
-    var currentUser: User? by mutableStateOf(null)
-        private set
+open class SessionViewModel : BaseViewModel() {
     
-    var currentToken: String? by mutableStateOf(null)
-        private set
+    private var _currentUser: User? = null
+    private var _currentToken: String? = null
+    private var _isSessionLoaded = false
     
-    var isSessionLoaded by mutableStateOf(false)
-        private set
+    val currentUser: User? get() = _currentUser
+    val currentToken: String? get() = _currentToken
+    val isSessionLoaded: Boolean get() = _isSessionLoaded
 
     var onSaveSession: ((User, String) -> Unit)? = null
     var onLoadSession: ((User?, String?) -> Unit)? = null
@@ -27,31 +22,31 @@ open class SessionViewModel {
         val user = authResponse.user
         val token = authResponse.token
         if (user != null && token != null) {
-            currentUser = user
-            currentToken = token
+            _currentUser = user
+            _currentToken = token
             onSaveSession?.invoke(user, token)
             println("🔐 SessionViewModel: Session saved for user: ${user.email}")
         }
     }
 
     fun loadSession(callback: (Boolean) -> Unit) {
-        CoroutineScope(Dispatchers.Main).launch {
+        launch {
             onLoadSession = { user, token ->
-                currentUser = user
-                currentToken = token
-                isSessionLoaded = true
+                _currentUser = user
+                _currentToken = token
+                _isSessionLoaded = true
                 val hasSession = user != null && token != null
                 println("🔐 SessionViewModel: Session loaded, hasSession: $hasSession")
                 callback(hasSession)
             }
-            
+
             requestSessionLoad()
         }
     }
 
     fun clearSession() {
-        currentUser = null
-        currentToken = null
+        _currentUser = null
+        _currentToken = null
         onClearSession?.invoke()
         println("🔐 SessionViewModel: Session cleared")
     }
@@ -61,6 +56,6 @@ open class SessionViewModel {
     }
 
     fun hasValidSession(): Boolean {
-        return currentUser != null && currentToken != null
+        return _currentUser != null && _currentToken != null
     }
 }

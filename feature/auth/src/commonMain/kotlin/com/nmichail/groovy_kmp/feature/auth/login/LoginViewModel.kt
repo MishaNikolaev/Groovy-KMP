@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.nmichail.groovy_kmp.domain.usecases.LoginUseCase
 import com.nmichail.groovy_kmp.domain.models.AuthResponse
-import com.nmichail.groovy_kmp.presentation.session.SessionViewModel
+import com.nmichail.groovy_kmp.feature.core.viewmodel.SessionViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
