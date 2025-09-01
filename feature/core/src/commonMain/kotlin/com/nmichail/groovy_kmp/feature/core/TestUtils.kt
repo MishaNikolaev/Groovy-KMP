@@ -22,7 +22,8 @@ object TestUtils {
      * Create a test loading state
      */
     fun <T> createLoadingState(): UiState<T> = UiState.Loading
-    
+
+
     /**
      * Create a test empty state
      */
