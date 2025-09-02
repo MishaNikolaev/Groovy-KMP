@@ -25,7 +25,6 @@ open class SessionViewModel : BaseViewModel() {
             _currentUser = user
             _currentToken = token
             onSaveSession?.invoke(user, token)
-            println("🔐 SessionViewModel: Session saved for user: ${user.email}")
         }
     }
 
@@ -36,7 +35,6 @@ open class SessionViewModel : BaseViewModel() {
                 _currentToken = token
                 _isSessionLoaded = true
                 val hasSession = user != null && token != null
-                println("🔐 SessionViewModel: Session loaded, hasSession: $hasSession")
                 callback(hasSession)
             }
 
@@ -48,7 +46,6 @@ open class SessionViewModel : BaseViewModel() {
         _currentUser = null
         _currentToken = null
         onClearSession?.invoke()
-        println("🔐 SessionViewModel: Session cleared")
     }
 
     protected open fun requestSessionLoad() {
