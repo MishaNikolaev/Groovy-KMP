@@ -8,11 +8,11 @@ import com.nmichail.groovy_kmp.domain.repository.RegisterRepository
 import com.nmichail.groovy_kmp.domain.usecases.LoginUseCase
 import com.nmichail.groovy_kmp.domain.usecases.RegisterUseCase
 import com.nmichail.groovy_kmp.data.remote.provideHttpClient
-import com.nmichail.groovy_kmp.presentation.session.SessionViewModel
 import com.nmichail.groovy_kmp.android.session.AndroidSessionViewModel
 import com.nmichail.groovy_kmp.data.manager.SessionManager
 import com.nmichail.groovy_kmp.feature.auth.login.LoginViewModel
 import com.nmichail.groovy_kmp.feature.auth.register.RegisterViewModel
+import com.nmichail.groovy_kmp.feature.core.viewmodel.SessionViewModel
 import org.koin.dsl.module
 
 val appModule = module {

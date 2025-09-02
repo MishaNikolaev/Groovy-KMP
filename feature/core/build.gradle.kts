@@ -23,13 +23,6 @@ kotlin {
                 implementation(project(":domain"))
                 implementation(project(":data:repository"))
                 
-                // Compose
-                api("org.jetbrains.compose.runtime:runtime:1.6.10")
-                api("org.jetbrains.compose.foundation:foundation:1.6.10")
-                api("org.jetbrains.compose.material3:material3:1.6.10")
-                api("org.jetbrains.compose.ui:ui:1.6.10")
-                implementation("org.jetbrains.compose.material:material-icons-extended:1.6.10")
-                
                 // Koin
                 implementation(libs.koin.core)
                 

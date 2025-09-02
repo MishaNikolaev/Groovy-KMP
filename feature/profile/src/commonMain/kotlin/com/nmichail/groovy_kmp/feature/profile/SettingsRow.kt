@@ -1,4 +1,4 @@
-package com.nmichail.groovy_kmp.presentation.screen.profile
+package com.nmichail.groovy_kmp.feature.profile
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row

@@ -3,7 +3,7 @@ package com.nmichail.groovy_kmp.android.session
 import com.nmichail.groovy_kmp.data.manager.SessionManager
 import com.nmichail.groovy_kmp.data.local.model.UserSession
 import com.nmichail.groovy_kmp.domain.models.User
-import com.nmichail.groovy_kmp.presentation.session.SessionViewModel
+import com.nmichail.groovy_kmp.feature.core.viewmodel.SessionViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

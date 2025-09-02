@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    id("org.jetbrains.compose") version "1.7.3"
 }
 
 kotlin {
@@ -22,13 +23,24 @@ kotlin {
             dependencies {
                 implementation(project(":feature:core"))
                 implementation(project(":domain"))
-                implementation(project(":data:repository"))
+                
+                // Compose dependencies
+                api(compose.runtime)
+                api(compose.foundation)
+                api(compose.material3)
+                api(compose.ui)
+                implementation(compose.materialIconsExtended)
+                @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+                implementation(compose.components.resources)
+                
+                // Koin
+                implementation(libs.koin.core)
             }
         }
         
         val androidMain by getting {
             dependencies {
-                // Android-specific dependencies if needed
+                implementation("androidx.core:core-ktx:1.12.0")
             }
         }
         
@@ -38,7 +50,7 @@ kotlin {
         
         val commonTest by getting {
             dependencies {
-                // Test dependencies if needed
+                implementation(libs.kotlin.test)
             }
         }
         
@@ -73,6 +85,14 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+    
+    buildFeatures {
+        compose = true
+    }
+    
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
 }
 
