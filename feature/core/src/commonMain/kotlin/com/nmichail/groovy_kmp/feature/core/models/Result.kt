@@ -42,3 +42,4 @@ fun <T> Result<T>.toUiState(): com.nmichail.groovy_kmp.feature.core.state.UiStat
     is Result.Error -> com.nmichail.groovy_kmp.feature.core.state.UiState.Error(message ?: "Unknown error")
     is Result.Loading -> com.nmichail.groovy_kmp.feature.core.state.UiState.Loading
 }
+
