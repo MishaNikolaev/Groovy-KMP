@@ -1,8 +1,6 @@
 package com.nmichail.groovy_kmp.feature.core.models
 
-/**
- * Generic result wrapper for operations
- */
+
 sealed class Result<out T> {
     data class Success<T>(val data: T) : Result<T>()
     data class Error(val exception: Throwable? = null, val message: String? = null) : Result<Nothing>()
@@ -39,11 +37,9 @@ sealed class Result<out T> {
     }
 }
 
-/**
- * Extension function to convert Result to UiState
- */
 fun <T> Result<T>.toUiState(): com.nmichail.groovy_kmp.feature.core.state.UiState<T> = when (this) {
     is Result.Success -> com.nmichail.groovy_kmp.feature.core.state.UiState.Success(data)
     is Result.Error -> com.nmichail.groovy_kmp.feature.core.state.UiState.Error(message ?: "Unknown error")
     is Result.Loading -> com.nmichail.groovy_kmp.feature.core.state.UiState.Loading
 }
+
