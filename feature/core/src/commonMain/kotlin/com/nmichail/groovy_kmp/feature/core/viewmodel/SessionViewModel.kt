@@ -1,5 +1,6 @@
 package com.nmichail.groovy_kmp.feature.core.viewmodel
 
+import com.nmichail.groovy_kmp.core.base.viewmodel.BaseViewModel
 import com.nmichail.groovy_kmp.domain.models.AuthResponse
 import com.nmichail.groovy_kmp.domain.models.User
 import kotlinx.coroutines.launch

@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
-    id("org.jetbrains.compose") version "1.7.3"
 }
 
 kotlin {
@@ -13,7 +12,7 @@ kotlin {
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "FeatureProfile"
+            baseName = "CoreNavigation"
             isStatic = true
         }
     }
@@ -21,28 +20,17 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":feature:core"))
-                implementation(project(":domain"))
+                // Compose Navigation
+                implementation("androidx.navigation:navigation-compose:2.7.5")
                 
-                // Compose dependencies
-                api(compose.runtime)
-                api(compose.foundation)
-                api(compose.material3)
-                api(compose.ui)
-                implementation(compose.materialIconsExtended)
-                @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
-                implementation(compose.components.resources)
-                
-                // Resources - we'll handle this differently to avoid circular dependency
-                
-                // Koin
-                implementation(libs.koin.core)
+                // Coroutines
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
         
         val androidMain by getting {
             dependencies {
-                implementation("androidx.core:core-ktx:1.12.0")
+                // Android-specific dependencies if needed
             }
         }
         
@@ -56,28 +44,18 @@ kotlin {
             }
         }
         
-        val iosTest by creating {
-            dependsOn(commonTest)
-        }
-        
         val iosX64Main by getting
         val iosArm64Main by getting
         val iosSimulatorArm64Main by getting
-        val iosX64Test by getting
-        val iosArm64Test by getting
-        val iosSimulatorArm64Test by getting
 
         iosX64Main.dependsOn(iosMain)
         iosArm64Main.dependsOn(iosMain)
         iosSimulatorArm64Main.dependsOn(iosMain)
-        iosX64Test.dependsOn(iosTest)
-        iosArm64Test.dependsOn(iosTest)
-        iosSimulatorArm64Test.dependsOn(iosTest)
     }
 }
 
 android {
-    namespace = "com.nmichail.groovy_kmp.feature.profile"
+    namespace = "com.nmichail.groovy_kmp.core.navigation"
     compileSdk = 35
 
     defaultConfig {
@@ -102,4 +80,4 @@ java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(11))
     }
-} 
+}

@@ -1,6 +1,6 @@
 package com.nmichail.groovy_kmp.feature.core
 
-import com.nmichail.groovy_kmp.feature.core.state.UiState
+import com.nmichail.groovy_kmp.core.base.state.UiState
 import com.nmichail.groovy_kmp.feature.core.models.Result
 
 object TestUtils {

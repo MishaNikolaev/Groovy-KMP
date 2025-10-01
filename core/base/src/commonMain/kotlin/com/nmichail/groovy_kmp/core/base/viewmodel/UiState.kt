@@ -1,4 +1,4 @@
-package com.nmichail.groovy_kmp.feature.core.state
+package com.nmichail.groovy_kmp.core.base.state
 
 sealed class UiState<out T> {
     object Loading : UiState<Nothing>()

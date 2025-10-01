@@ -1,4 +1,4 @@
-package com.nmichail.groovy_kmp.feature.core.viewmodel
+package com.nmichail.groovy_kmp.core.base.viewmodel
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
