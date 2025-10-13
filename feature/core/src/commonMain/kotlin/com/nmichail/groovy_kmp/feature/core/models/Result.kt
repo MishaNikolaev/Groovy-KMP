@@ -37,9 +37,9 @@ sealed class Result<out T> {
     }
 }
 
-fun <T> Result<T>.toUiState(): com.nmichail.groovy_kmp.feature.core.state.UiState<T> = when (this) {
-    is Result.Success -> com.nmichail.groovy_kmp.feature.core.state.UiState.Success(data)
-    is Result.Error -> com.nmichail.groovy_kmp.feature.core.state.UiState.Error(message ?: "Unknown error")
-    is Result.Loading -> com.nmichail.groovy_kmp.feature.core.state.UiState.Loading
+fun <T> Result<T>.toUiState(): com.nmichail.groovy_kmp.core.base.state.UiState<T> = when (this) {
+    is Result.Success -> com.nmichail.groovy_kmp.core.base.state.UiState.Success(data)
+    is Result.Error -> com.nmichail.groovy_kmp.core.base.state.UiState.Error(message ?: "Unknown error")
+    is Result.Loading -> com.nmichail.groovy_kmp.core.base.state.UiState.Loading
 }
 

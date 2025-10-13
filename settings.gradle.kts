@@ -25,6 +25,10 @@ include(":androidApp")
 include(":iosApp")
 
 // Core modules
+include(":core:ui")
+include(":core:network")
+include(":core:navigation")
+include(":core:base")
 include(":shared")
 include(":domain")
 include(":data:core")

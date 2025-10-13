@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -12,7 +13,7 @@ kotlin {
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "FeatureCore"
+            baseName = "CoreNetwork"
             isStatic = true
         }
     }
@@ -20,12 +21,14 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":domain"))
-                implementation(project(":data:repository"))
-                implementation(project(":core:base"))
+                // Ktor
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.client.logging)
+                implementation(libs.ktor.serialization.kotlinx.json)
                 
-                // Koin
-                implementation(libs.koin.core)
+                // Serialization
+                implementation(libs.kotlinx.serialization.json)
                 
                 // Coroutines
                 implementation(libs.kotlinx.coroutines.core)
@@ -34,42 +37,37 @@ kotlin {
         
         val androidMain by getting {
             dependencies {
-                // Android-specific dependencies if needed
+                // Android-specific Ktor engine
+                implementation("io.ktor:ktor-client-android:${libs.versions.ktor.get()}")
             }
         }
         
         val iosMain by creating {
             dependsOn(commonMain)
+            dependencies {
+                // iOS-specific Ktor engine
+                implementation("io.ktor:ktor-client-darwin:${libs.versions.ktor.get()}")
+            }
         }
         
         val commonTest by getting {
             dependencies {
-                // Test dependencies if needed
+                implementation(libs.kotlin.test)
             }
-        }
-        
-        val iosTest by creating {
-            dependsOn(commonTest)
         }
         
         val iosX64Main by getting
         val iosArm64Main by getting
         val iosSimulatorArm64Main by getting
-        val iosX64Test by getting
-        val iosArm64Test by getting
-        val iosSimulatorArm64Test by getting
 
         iosX64Main.dependsOn(iosMain)
         iosArm64Main.dependsOn(iosMain)
         iosSimulatorArm64Main.dependsOn(iosMain)
-        iosX64Test.dependsOn(iosTest)
-        iosArm64Test.dependsOn(iosTest)
-        iosSimulatorArm64Test.dependsOn(iosTest)
     }
 }
 
 android {
-    namespace = "com.nmichail.groovy_kmp.feature.core"
+    namespace = "com.nmichail.groovy_kmp.core.network"
     compileSdk = 35
 
     defaultConfig {
@@ -86,4 +84,4 @@ java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(11))
     }
-} 
+}

@@ -20,7 +20,7 @@ android {
         buildConfig = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.12"
+        kotlinCompilerExtensionVersion = "1.5.13"
     }
     packaging {
         resources {
@@ -39,12 +39,19 @@ android {
     }
     kotlinOptions {
         jvmTarget = "1.8"
+        freeCompilerArgs += listOf("-Xsuppress-version-warnings")
     }
 }
 
 dependencies {
     implementation(projects.shared)
     implementation(projects.domain)
+    
+    // Core modules
+    implementation(projects.core.base)
+    implementation(projects.core.network)
+    implementation(projects.core.ui)
+    implementation(projects.core.navigation)
     
     // Data modules - add directly since they were removed from shared
     implementation(projects.data.core)

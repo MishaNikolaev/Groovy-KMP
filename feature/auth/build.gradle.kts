@@ -34,6 +34,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":feature:core"))
+                implementation(project(":core:base"))
                 implementation(project(":domain"))
                 
                 // Compose dependencies
@@ -165,7 +166,7 @@ android {
     }
     
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
+        kotlinCompilerExtensionVersion = "1.5.13"
     }
     
     sourceSets {
